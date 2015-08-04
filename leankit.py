@@ -312,10 +312,7 @@ class LeankitCard(Converter):
             except ValueError, ex:
                 log.error("Unable to parse card %i: %s" % (self.id, ex.message))
                 annotations = Record()
-            return (
-                annotations,
-                log.description[:start].strip(),
-                log.description[end:].strip())
+            return annotations, self.description[:start].strip(), self.description[end:].strip()
         else:
             return Record(), self.description, ''
 

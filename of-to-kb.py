@@ -41,7 +41,10 @@ def main():
             new_tasks.append(task)
         else:
             logging.debug("Ignoring {0} ({1}) since it's already on the board".format(name, identifier))
-    board.add_cards(new_tasks)
+    if len(new_tasks) > 0:
+        board.add_cards(new_tasks)
+    else:
+        logging.info("Board is up to date - no cards to sync")
 
 
 def _init_logging():
