@@ -1,0 +1,5 @@
+leankit-config.yaml
+.DS_Store
+.idea/
+*.pyc
+omnifocus-to-kanban.log
