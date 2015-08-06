@@ -3,3 +3,4 @@ leankit-config.yaml
 .idea/
 *.pyc
 omnifocus-to-kanban.log
+trello-config.yaml

@@ -3,31 +3,37 @@
 """Omnifocus to Kanban
 
 Usage:
-  of-to-kb.py
+  of-to-kb.py (--trello | --leankit)
   of-to-kb.py -h | --help
   of-to-kb.py --version
 
 """
 
 import logging
-import sys
+import logging.config
 import os
 
 from docopt import docopt
 
 from omnifocus import Omnifocus
-from kanban_board import LeanKit
+from kanban_board import LeanKit, Trello
 
 
 def main():
-    docopt(__doc__)
+    opts = docopt(__doc__)
 
-    logging.info("omnifocus-to-kanban started...")
-    logging.info("Current working directory: {0}".format(os.getcwd()))
+    logging.debug("Current working directory: {0}".format(os.getcwd()))
 
-    board = LeanKit()
+    if opts['--trello']:
+        logging.info("Connecting to Trello board")
+        board = Trello()
+    elif opts['--leankit']:
+        logging.info("Connecting to Leankit board")
+        board = LeanKit()
+    else:
+        exit(-1)
+
     omnifocus = Omnifocus()
-
     external_ids = board.find_completed_card_ids()
     omnifocus.close_tasks([external_id for external_id in external_ids])
 
@@ -41,6 +47,7 @@ def main():
             new_tasks.append(task)
         else:
             logging.debug("Ignoring {0} ({1}) since it's already on the board".format(name, identifier))
+
     if len(new_tasks) > 0:
         board.add_cards(new_tasks)
     else:
@@ -48,12 +55,7 @@ def main():
 
 
 def _init_logging():
-    logging.basicConfig(level=logging.DEBUG, format='%(asctime)s %(name)-12s %(levelname)-8s %(message)s',
-                        datefmt='%y-%m-%d %H:%M:%S', filename='omnifocus-to-kanban.log', filemode='w')
-    console = logging.StreamHandler(sys.stdout)
-    console.setLevel(logging.INFO)
-    console.setFormatter(logging.Formatter('%(message)s'))
-    logging.getLogger('').addHandler(console)
+    logging.config.fileConfig('log.conf')
 
 
 if __name__ == '__main__':

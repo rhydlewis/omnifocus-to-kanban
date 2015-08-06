@@ -45,7 +45,7 @@ class Omnifocus:
         of_location = "{0}{1}".format(os.path.expanduser("~"), DB_LOCATION)
         if not os.path.isfile(of_location):
             of_location = re.sub(".OmniFocus2", ".OmniFocus2.MacAppStore", of_location)
-        self.log.info("Using Omnifocus location {0}".format(of_location))
+        self.log.debug("Using Omnifocus location {0}".format(of_location))
 
         self.engine = create_engine('sqlite:///' + of_location, echo=False)
         self.session = sessionmaker()(bind=self.engine)
@@ -64,7 +64,7 @@ class Omnifocus:
         for task in results:
             if not task.is_deferred():
                 tasks.append(dict(identifier=task.persistentIdentifier, name=task.task_name(),
-                                  type=task.context_name()))
+                                  type=task.context_name(), uri="{0}{1}".format(URI_PREFIX, task.persistentIdentifier)))
 
         self.log.debug("Found {0} flagged tasks".format(len(tasks)))
         return tasks
