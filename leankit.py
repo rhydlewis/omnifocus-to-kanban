@@ -1,7 +1,6 @@
 # Copyright 2011-2012 Canonical Ltd
 # -*- coding: utf-8 -*-
 
-import requests
 import json
 import operator
 from pprint import pprint
@@ -9,6 +8,8 @@ import re
 from textwrap import dedent
 import time
 import logging
+
+import requests
 
 ANNOTATION_REGEX = re.compile('^\s*{.*}\s*$', re.MULTILINE | re.DOTALL)
 
@@ -29,6 +30,7 @@ WIP_OVERRIDE_COMMENT_REQUIRED = 900
 RESENDING_EMAIL_REQUIRED = 902
 UNAUTHORIZED_ACCESS = 1000
 SUCCESS_CODES = [DATA_RETRIEVAL_SUCCESS, DATA_INSERT_SUCCESS, DATA_UPDATE_SUCCESS, DATA_DELETE_SUCCESS]
+
 
 class Record(dict):
     """A little dict subclass that adds attribute access to values."""
@@ -455,27 +457,31 @@ class LeankitBoard(Converter):
             name = card['name']
             identifier = card['identifier']
             type = card['type']
-            type_id = self.card_type_names[type]
-            log.info("Creating card with details: name={0} id={1} type={2} ({3})".format(name, identifier, type,
-                                                                                          type_id))
+            type_id = None
+            try:
+                type_id = self.card_type_names[type]
+                log.info("Creating card with details: name={0} id={1} type={2} ({3})".format(name, identifier, type,
+                                                                                             type_id))
+            except KeyError:
+                log.info("Can't find card type {0} configured in LeanKit".format(type))
+                log.info("Creating card with details: name={0} id={1} type=default".format(name, identifier))
+
             new_card = lane.addCard()
             new_card.title = name
             new_card.external_card_id = identifier
-            new_card.type_id = type_id
+            if type_id is not None:
+                new_card.type_id = type_id
             new_card.is_blocked = 'false'
             new_card.save()
 
     def cards_with_external_ids(self):
         return self._cards_with_external_ids
 
-
     def getCardsWithExternalLinks(self):
         return self._cards_with_external_links
 
-
     def getCardsWithDescriptionAnnotations(self):
         return self._cards_with_description_annotations
-
 
     def fetch_details(self):
         self.details = self.connector.get(self.base_uri + str(self.id)).ReplyData[0]
@@ -629,7 +635,6 @@ class LeankitKanban(object):
         self._boards_by_id = {}
         self._boards_by_title = {}
 
-
     def getBoards(self, include_archived=False):
         """List all the boards user has access to.
 
@@ -675,4 +680,3 @@ class LeankitKanban(object):
         if board is not None:
             board.fetch_details()
         return board
-
