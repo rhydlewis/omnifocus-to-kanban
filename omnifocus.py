@@ -64,7 +64,8 @@ class Omnifocus:
         for task in results:
             if not task.is_deferred():
                 tasks.append(dict(identifier=task.persistentIdentifier, name=task.task_name(),
-                                  type=task.context_name(), uri="{0}{1}".format(URI_PREFIX, task.persistentIdentifier)))
+                                  type=task.context_name(), uri="{0}{1}".
+                                  format(URI_PREFIX, task.persistentIdentifier)))
 
         self.log.debug("Found {0} flagged tasks".format(len(tasks)))
         return tasks
@@ -76,7 +77,8 @@ class Omnifocus:
     def close_task(self, identifier):
         already_closed = Omnifocus.task_completed(identifier)
         if already_closed:
-            self.log.debug("Ignoring {0}{1}, already completed in Omnifocus".format(URI_PREFIX, identifier))
+            self.log.debug("Ignoring {0}{1}, already completed in Omnifocus".
+                           format(URI_PREFIX, identifier))
         elif already_closed is not None:
             self.log.info("Closing {0}{1}".format(URI_PREFIX, identifier))
             scpt = applescript.AppleScript(CLOSE_TASK_SCRIPT)

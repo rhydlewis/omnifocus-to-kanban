@@ -21,8 +21,9 @@ from kanban_board import LeanKit, Trello
 
 def main():
     opts = docopt(__doc__)
+    logging.debug("Current working directory: %s", os.getcwd())
 
-    logging.debug("Current working directory: {0}".format(os.getcwd()))
+    board = None
 
     if opts['--trello']:
         logging.info("Connecting to Trello board")
@@ -41,12 +42,11 @@ def main():
     new_tasks = []
     for task in tasks:
         identifier = task['identifier']
-        name = task['name']
         if not board.card_exists(identifier):
-            logging.debug("Adding {0} ({1}) to list of tasks to sync with board".format(name, identifier))
+            logging.debug(u'Adding %s to list of tasks to sync with board', identifier)
             new_tasks.append(task)
         else:
-            logging.debug("Ignoring {0} ({1}) since it's already on the board".format(name, identifier))
+            logging.debug(u'Ignoring %s since it exists on the board', identifier)
 
     if len(new_tasks) > 0:
         board.add_cards(new_tasks)
@@ -54,10 +54,6 @@ def main():
         logging.info("Board is up to date - no cards to sync")
 
 
-def _init_logging():
-    logging.config.fileConfig('log.conf')
-
-
 if __name__ == '__main__':
-    _init_logging()
+    logging.config.fileConfig('log.conf')
     main()

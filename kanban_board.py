@@ -1,5 +1,5 @@
 from leankit import LeankitKanban
-from trello import TrelloClient, Label
+from trello import TrelloClient
 import logging
 import yaml
 import os
@@ -13,17 +13,15 @@ class LeanKit:
     def __init__(self):
         self.config = load_config("leankit-config.yaml")
         board_id = self.config['board_id']
-        self.kb = LeankitKanban(self.config['account'], self.config['email'], self.config['password'])
+        self.kb = LeankitKanban(self.config['account'], self.config['email'],
+                                self.config['password'])
         self.log.debug("Connecting to Leankit board {0}".format(board_id))
-        self.board = self.kb.getBoard(board_id=board_id)
+        self.board = self.kb.get_board(board_id=board_id)
 
     def find_completed_card_ids(self):
+        self.log.info("Looking for completed cards in lanes")
         lanes = self.config['completed_lanes']
-        self.log.info("Looking for completed cards in lanes: {0}".format(lanes))
-        cards = []
-
-        [cards.extend([card.external_card_id for card in self.board.getLane(lane).cards
-                       if len(card.external_card_id) > 1]) for lane in lanes]
+        cards = self.board.cards_with_external_ids(lanes)
         self.log.info("Found {0} completed cards on the board".format(len(cards)))
         self.log.debug("External ids: {0}".format(cards))
         return cards
@@ -42,6 +40,8 @@ class Trello:
 
     def __init__(self):
         self.config = load_config("trello-config.yaml")
+        self.cards_with_external_ids = []
+        self.labels = {}
 
         app_key = self.config['app_key']
         token = self.config['token']
@@ -54,8 +54,6 @@ class Trello:
     def classify_board(self):
         cards = self.board.all_cards()
         self.log.debug("Classifying Trello board, contains {0} cards".format(len(cards)))
-        self.cards_with_external_ids = []
-        self.labels = {}
 
         for label in self.board.get_labels():
             self.labels[label.name] = label
@@ -66,7 +64,6 @@ class Trello:
             else:
                 self.log.debug("Looking for external id in {0}".format(card.name))
                 self.cards_with_external_ids.append(Trello.get_external_id(card))
-            # comments = [comment for comment in card.comments if card.comments.include('omnifocus')]
 
     @staticmethod
     def get_external_id(card):
@@ -90,7 +87,8 @@ class Trello:
 
     def add_cards(self, cards):
         default_list = self.board.get_list(self.config['default_list'])
-        self.log.info("Adding {0} cards to lane {1} ({2})".format(len(cards), default_list.name, default_list.id))
+        self.log.info("Adding {0} cards to lane {1} ({2})".format(len(cards), default_list.name,
+                                                                  default_list.id))
         for card in cards:
             name = card['name']
             identifier = card['identifier']
@@ -101,11 +99,12 @@ class Trello:
 
             try:
                 card.add_label(self.labels[card_type])
-                self.log.info("Creating card with details: name={0} id={1} type={2}".format(name, identifier,
-                                                                                            card_type))
+                self.log.info("Creating card with details: name={0} id={1} type={2}".
+                              format(name, identifier, card_type))
             except KeyError:
                 self.log.info("Can't find card type {0} configured in Trello".format(card_type))
-                self.log.info("Creating card with details: name={0} id={1} type=default".format(name, identifier))
+                self.log.info("Creating card with details: name={0} id={1} type=default".
+                              format(name, identifier))
 
     def find_completed_card_ids(self):
         completed_lists = self.config['completed_lists']
