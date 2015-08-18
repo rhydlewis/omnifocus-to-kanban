@@ -11,7 +11,7 @@ import logging
 
 import requests
 
-ANNOTATION_REGEX = re.compile('^\s*{.*}\s*$', re.MULTILINE | re.DOTALL)
+ANNOTATION_REGEX = re.compile('^\s*\{.*}\s*$', re.MULTILINE | re.DOTALL)
 
 log = logging.getLogger(__name__)
 
@@ -29,7 +29,8 @@ THROTTLE_WAIT_RESPONSE = 800
 WIP_OVERRIDE_COMMENT_REQUIRED = 900
 RESENDING_EMAIL_REQUIRED = 902
 UNAUTHORIZED_ACCESS = 1000
-SUCCESS_CODES = [DATA_RETRIEVAL_SUCCESS, DATA_INSERT_SUCCESS, DATA_UPDATE_SUCCESS, DATA_DELETE_SUCCESS]
+SUCCESS_CODES = [DATA_RETRIEVAL_SUCCESS, DATA_INSERT_SUCCESS, DATA_UPDATE_SUCCESS,
+                 DATA_DELETE_SUCCESS]
 
 
 class Record(dict):
@@ -52,11 +53,12 @@ class LeankitConnector(object):
     def __init__(self, account, username=None, password=None, throttle=1):
         host = 'https://' + account + '.leankitkanban.com'
         self.base_api_url = host + '/Kanban/Api'
-        self.http = self._configure_auth(username, password)
+        self.http = LeankitConnector.configure_auth(username, password)
         self.last_request_time = time.time() - throttle
         self.throttle = throttle
 
-    def _configure_auth(self, username=None, password=None):
+    @staticmethod
+    def configure_auth(username=None, password=None):
         """Configure the http object to use basic auth headers."""
         http = requests.sessions.Session()
         if username is not None and password is not None:
@@ -82,8 +84,8 @@ class LeankitConnector(object):
             time.sleep(delay)
         self.last_request_time = time.time()
         try:
-            resp = self.http.request(method=action, url=self.base_api_url + url, data=data, auth=self.http.auth,
-                                     headers=headers)
+            resp = self.http.request(method=action, url=self.base_api_url + url, data=data,
+                                     auth=self.http.auth, headers=headers)
         except Exception as e:
             raise IOError("Unable to make HTTP request: {0}".format(e.message))
 
@@ -128,16 +130,16 @@ class Converter(object):
         self.direct_setattr('_watched_attrs', set([]))
 
         for attr in self.attributes:
-            attr_name = self._prettifyName(attr)
+            attr_name = self._prettify_name(attr)
             self._watched_attrs.add(attr_name)
             self.direct_setattr(attr_name, raw_data[attr])
 
         for attr in self.optional_attributes:
-            attr_name = self._prettifyName(attr)
+            attr_name = self._prettify_name(attr)
             self._watched_attrs.add(attr_name)
             self.direct_setattr(attr_name, raw_data.get(attr, None))
 
-    def _prettifyName(self, camelcase):
+    def _prettify_name(self, camelcase):
         camelcase = camelcase.replace('ID', '_id')
         if len(camelcase) > 1:
             repl_func = lambda match: '_' + match.group(1).lower()
@@ -146,7 +148,7 @@ class Converter(object):
         else:
             return camelcase.lower()
 
-    def _toCamelCase(self, name):
+    def _to_camel_case(self, name):
         if len(name) > 1:
             repl_func = lambda match: match.group(1)[1:].upper()
             name = name[0].upper() + name[1:]
@@ -155,9 +157,8 @@ class Converter(object):
             return name.upper()
 
     def __setattr__(self, attr, value):
-        if ((not hasattr(self, attr) or
-                     getattr(self, attr, None) != value) and
-                    attr in self._watched_attrs):
+        if (not hasattr(self, attr) or getattr(self, attr, None) != value) \
+                and attr in self._watched_attrs:
             self.direct_setattr('is_dirty', True)
             self.dirty_attrs.add(attr)
         self.direct_setattr(attr, value)
@@ -208,9 +209,8 @@ class LeankitCard(Converter):
             # no-op.
             return
         data = self._raw_data
-        data["UserWipOverrideComment"] = None;
-        if ("AssignedUsers" in data and
-                    "assigned_user_id" not in self.dirty_attrs):
+        data["UserWipOverrideComment"] = None
+        if "AssignedUsers" in data and "assigned_user_id" not in self.dirty_attrs:
             if 'AssignedUserId' in data.keys():
                 del data['AssignedUserId']
             if 'AssignedUserName' in data.keys():
@@ -219,7 +219,7 @@ class LeankitCard(Converter):
                 lambda X: X['AssignedUserId'], data['AssignedUsers'])
 
         for attr in self.dirty_attrs:
-            data[self._toCamelCase(attr)] = getattr(self, attr)
+            data[self._to_camel_case(attr)] = getattr(self, attr)
 
         if self.is_new:
             del data['Id']
@@ -456,15 +456,16 @@ class LeankitBoard(Converter):
         for card in cards:
             name = card['name']
             identifier = card['identifier']
-            type = card['type']
+            card_type = card['type']
             type_id = None
             try:
-                type_id = self.card_type_names[type]
-                log.info("Creating card with details: name={0} id={1} type={2} ({3})".format(name, identifier, type,
-                                                                                             type_id))
+                type_id = self.card_type_names[card_type]
+                log.info("Creating card with details: name={0} id={1} type={2} ({3})".
+                         format(name, identifier, card_type, type_id))
             except KeyError:
-                log.info("Can't find card type {0} configured in LeanKit".format(type))
-                log.info("Creating card with details: name={0} id={1} type=default".format(name, identifier))
+                log.info("Can't find card type {0} configured in LeanKit".format(card_type))
+                log.info("Creating card with details: name={0} id={1} type=default".
+                         format(name, identifier))
 
             new_card = lane.addCard()
             new_card.title = name
@@ -474,8 +475,14 @@ class LeankitBoard(Converter):
             new_card.is_blocked = 'false'
             new_card.save()
 
-    def cards_with_external_ids(self):
-        return self._cards_with_external_ids
+    def cards_with_external_ids(self, lanes=None):
+        cards = []
+        if lanes:
+            [cards.extend([card.external_card_id for card in self.getLane(lane).cards
+                           if len(card.external_card_id) > 1]) for lane in lanes]
+        else:
+            cards = self._cards_with_external_ids
+        return cards
 
     def getCardsWithExternalLinks(self):
         return self._cards_with_external_links
@@ -562,7 +569,7 @@ class LeankitBoard(Converter):
                 flatten_lane(child)
 
         map(flatten_lane, self.root_lane.child_lanes)
-        return flat_lanes[lane_id];
+        return flat_lanes[lane_id]
 
     def getLaneByTitle(self, title):
         if len(self.root_lane.child_lanes) > 0:
@@ -575,12 +582,12 @@ class LeankitBoard(Converter):
         return None
 
     def _getLaneByTitle(self, lane, title):
-        if (lane.title == title):
+        if lane.title == title:
             return lane
         else:
             for child in lane.child_lanes:
                 result = self._getLaneByTitle(child, title)
-                if result != None:
+                if result is not None:
                     return result
             return None
 
@@ -589,7 +596,7 @@ class LeankitBoard(Converter):
             return self._getLaneByPath(self.root_lane, path, ignorecase)
 
     def _getLaneByPath(self, lane, path, ignorecase):
-        if ignorecase == True:
+        if ignorecase:
             if lane.path.lower() == path.lower():
                 return lane
         else:
@@ -598,34 +605,34 @@ class LeankitBoard(Converter):
 
         for child in lane.child_lanes:
             result = self._getLaneByPath(child, path, ignorecase)
-            if result != None:
+            if result is not None:
                 return result
         return None
 
-    def _printLanes(self, lane, indent, include_cards=False):
-        next_lane = lane.getNextLanes()
-        if next_lane is None:
-            next_lane = ''
-        else:
-            next_lane = (' (next: any of [' +
-                         ', '.join([my_lane.path for my_lane in next_lane])
-                         + '])')
-            next_lane += ' - %d cards' % len(lane.cards)
-        print "  " * indent + "* " + lane.title + next_lane
-        for card in lane.cards:
-            print ("  " * (indent + 1) + "- #" + card.external_card_id +
-                   ': ' + card.title)
-        for child in lane.child_lanes:
-            self._printLanes(child, indent + 1)
-
-    def printLanes(self, include_cards=False):
-        """Recursively prints all the lanes in the board with indentation."""
-        if len(self.root_lane.child_lanes) == 0:
-            return
-        print "Board lanes:"
-        indent = 1
-        for lane in self.root_lane.child_lanes:
-            self._printLanes(lane, indent, include_cards)
+    # def _printLanes(self, lane, indent, include_cards=False):
+    #     next_lane = lane.getNextLanes()
+    #     if next_lane is None:
+    #         next_lane = ''
+    #     else:
+    #         next_lane = (' (next: any of [' +
+    #                      ', '.join([my_lane.path for my_lane in next_lane])
+    #                      + '])')
+    #         next_lane += ' - %d cards' % len(lane.cards)
+    #     print "  " * indent + "* " + lane.title + next_lane
+    #     for card in lane.cards:
+    #         print ("  " * (indent + 1) + "- #" + card.external_card_id +
+    #                ': ' + card.title)
+    #     for child in lane.child_lanes:
+    #         self._printLanes(child, indent + 1)
+    #
+    # def printLanes(self, include_cards=False):
+    #     """Recursively prints all the lanes in the board with indentation."""
+    #     if len(self.root_lane.child_lanes) == 0:
+    #         return
+    #     print "Board lanes:"
+    #     indent = 1
+    #     for lane in self.root_lane.child_lanes:
+    #         self._printLanes(lane, indent, include_cards)
 
 
 class LeankitKanban(object):
@@ -635,7 +642,7 @@ class LeankitKanban(object):
         self._boards_by_id = {}
         self._boards_by_title = {}
 
-    def getBoards(self, include_archived=False):
+    def get_boards(self, include_archived=False):
         """List all the boards user has access to.
 
         :param include_archived: if True, include archived boards as well.
@@ -649,15 +656,15 @@ class LeankitKanban(object):
             boards.append(board)
         return boards
 
-    def _refreshBoardsCache(self):
-        self._boards = self.getBoards(True)
+    def _refresh_boards_cache(self):
+        self._boards = self.get_boards(True)
         self._boards_by_id = {}
         self._boards_by_title = {}
         for board in self._boards:
             self._boards_by_id[board.id] = board
             self._boards_by_title[board.title] = board
 
-    def _findBoardInCache(self, board_id=None, title=None):
+    def _find_board_in_cache(self, board_id=None, title=None):
         assert title is not None or board_id is not None, (
             "Either a board title or board id are required.")
         if board_id is not None and board_id in self._boards_by_id:
@@ -667,16 +674,16 @@ class LeankitKanban(object):
         else:
             return None
 
-    def _findBoard(self, board_id=None, title=None):
-        board = self._findBoardInCache(board_id, title)
+    def _find_board(self, board_id=None, title=None):
+        board = self._find_board_in_cache(board_id, title)
         if board is None:
             # Not found, try once more after refreshing the cache.
-            self._refreshBoardsCache()
-            board = self._findBoardInCache(board_id, title)
+            self._refresh_boards_cache()
+            board = self._find_board_in_cache(board_id, title)
         return board
 
-    def getBoard(self, board_id=None, title=None):
-        board = self._findBoard(board_id, title)
+    def get_board(self, board_id=None, title=None):
+        board = self._find_board(board_id, title)
         if board is not None:
             board.fetch_details()
         return board
