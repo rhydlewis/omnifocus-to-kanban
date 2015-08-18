@@ -1,5 +1,6 @@
 # Copyright 2011-2012 Canonical Ltd
 # -*- coding: utf-8 -*-
+# Modified version of Canonical's original code: https://launchpad.net/lp2kanban
 
 import json
 import operator

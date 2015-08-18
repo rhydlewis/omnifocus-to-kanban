@@ -1,3 +1,5 @@
+# Based heavily on this: https://github.com/msabramo/PyOmniFocus
+
 import applescript
 import logging
 import os
