@@ -1,5 +1,5 @@
-leankit-config.yaml
+config/leankit-config.yaml
+config/trello-config.yaml
+log/omnifocus-to-kanban.log
 .idea/
-omnifocus-to-kanban.log
-trello-config.yaml
 *.pyc

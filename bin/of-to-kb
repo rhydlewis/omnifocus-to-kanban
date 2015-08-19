@@ -16,7 +16,7 @@ import os
 from docopt import docopt
 
 from omnifocus import Omnifocus
-from kanban_board import LeanKit, Trello
+from kanban import LeanKit, Trello
 
 
 def main():
@@ -55,5 +55,5 @@ def main():
 
 
 if __name__ == '__main__':
-    logging.config.fileConfig('log.conf')
+    logging.config.fileConfig('config/log.conf')
     main()
