@@ -8,10 +8,13 @@ Usage:
   of-to-kb.py --version
 
 """
+import sys
+import os
+
+sys.path.insert(0, '.')
 
 import logging
 import logging.config
-import os
 
 from docopt import docopt
 
@@ -21,8 +24,6 @@ from kanban import LeanKit, Trello
 
 def main():
     opts = docopt(__doc__)
-    logging.debug("Current working directory: %s", os.getcwd())
-
     board = None
 
     if opts['--trello']:
@@ -56,4 +57,8 @@ def main():
 
 if __name__ == '__main__':
     logging.config.fileConfig('config/log.conf')
+    logging.debug("sys.path: %s", sys.path)
+    logging.debug("sys.executable: %s", sys.executable)
+    logging.debug("os.getcwd(): %s", os.getcwd())
+
     main()
