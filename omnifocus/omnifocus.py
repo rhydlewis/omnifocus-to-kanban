@@ -60,6 +60,7 @@ class Omnifocus:
         results = self.session.query(Task).join(ProjectInfo). \
             filter(or_(Task.flagged == 1), Task.effectiveFlagged == 1). \
             filter(Task.dateCompleted.is_(None)). \
+            filter(Task.blockedByFutureStartDate.is_(0)). \
             filter(ProjectInfo.status.notin_(['done', 'dropped', 'inactive'])). \
             order_by(Task.name)
 
