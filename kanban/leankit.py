@@ -459,6 +459,7 @@ class LeankitBoard(Converter):
             identifier = card['identifier']
             card_type = card['type']
             type_id = None
+            note = card['note']
             try:
                 type_id = self.card_type_names[card_type]
                 log.info("Creating card with details: name={0} id={1} type={2} ({3})".
@@ -471,6 +472,8 @@ class LeankitBoard(Converter):
             new_card = lane.addCard()
             new_card.title = name
             new_card.external_card_id = identifier
+            if note is not None:
+                new_card.description = note
             if type_id is not None:
                 new_card.type_id = type_id
             new_card.is_blocked = 'false'

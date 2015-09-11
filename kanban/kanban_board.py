@@ -93,8 +93,11 @@ class Trello:
             name = card['name']
             identifier = card['identifier']
             card_type = card['type']
+            note = card['note']
 
             card = default_list.add_card(name)
+            if note is not None:
+                card.set_description(note)
             card.comment("{0}{1}".format(Trello.COMMENT_PREFIX, identifier))
 
             try:

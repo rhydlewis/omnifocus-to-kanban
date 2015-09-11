@@ -67,8 +67,8 @@ class Omnifocus:
         for task in results:
             if not task.is_deferred():
                 tasks.append(dict(identifier=task.persistentIdentifier, name=task.task_name(),
-                                  type=task.context_name(), uri="{0}{1}".
-                                  format(URI_PREFIX, task.persistentIdentifier)))
+                                  type=task.context_name(), note=task.note,
+                                  uri="{0}{1}".format(URI_PREFIX, task.persistentIdentifier),))
 
         self.log.debug("Found {0} flagged tasks".format(len(tasks)))
         return tasks
@@ -127,6 +127,8 @@ class Task(Base):
     dateDue = Column(Integer)
     dateToStart = Column(Integer)
     effectiveDateToStart = Column(Integer)
+
+    note = Column('plainTextNote', Text)
 
     name = Column(Text)
     context_id = Column('context', Text, ForeignKey('Context.persistentIdentifier'))

@@ -11,13 +11,12 @@ Usage:
 import sys
 import os
 
-sys.path.insert(0, '.')
-
 import logging
 import logging.config
 
 from docopt import docopt
 
+sys.path.insert(0, '.')
 from omnifocus import Omnifocus
 from kanban import LeanKit, Trello
 
