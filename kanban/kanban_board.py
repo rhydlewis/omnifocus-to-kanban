@@ -1,9 +1,10 @@
-from leankit import LeankitKanban
-from trello import TrelloClient
 import logging
 import yaml
 import os
 import re
+
+from trello import TrelloClient
+from leankit import LeankitKanban
 
 
 class LeanKit:
@@ -19,19 +20,23 @@ class LeanKit:
         self.board = self.kb.get_board(board_id=board_id)
 
     def find_completed_card_ids(self):
-        self.log.info("Looking for completed cards in lanes")
         lanes = self.config['completed_lanes']
-        cards = self.board.cards_with_external_ids(lanes)
-        self.log.info("Found {0} completed cards on the board".format(len(cards)))
-        self.log.debug("External ids: {0}".format(cards))
-        return cards
+        card_ids = self.board.cards_with_external_ids(lanes)
+        self.log.info("Found {0} cards in completed lanes".format(len(card_ids)))
+        card_ids = card_ids + self.find_completed_cards_in_taskboards()
+        self.log.debug("Completed cards with external ids: {0}".format(card_ids))
+        return card_ids
+
+    def find_completed_cards_in_taskboards(self):
+        taskboard_cards = self.board.done_taskboard_cards()
+        self.log.info("Found {0} completed cards in taskboards".format(len(taskboard_cards)))
+        return taskboard_cards
 
     def card_exists(self, identifier):
         return identifier in self.board.external_ids
 
     def add_cards(self, cards):
-        self.board.add_cards(cards)
-        return True
+        return self.board.add_cards(cards)
 
 
 class Trello:

@@ -55,7 +55,7 @@ class Omnifocus:
     def flagged_tasks(self):
         self.log.debug("Looking for flagged tasks")
 
-        tasks = []
+        tasks = dict()
 
         results = self.session.query(Task).join(ProjectInfo). \
             filter(or_(Task.flagged == 1), Task.effectiveFlagged == 1). \
@@ -66,9 +66,8 @@ class Omnifocus:
 
         for task in results:
             if not task.is_deferred():
-                tasks.append(dict(identifier=task.persistentIdentifier, name=task.task_name(),
-                                  type=task.context_name(), note=task.note,
-                                  uri="{0}{1}".format(URI_PREFIX, task.persistentIdentifier),))
+                identifier = task.persistentIdentifier
+                tasks[identifier] = Omnifocus.init_task(task)
 
         self.log.debug("Found {0} flagged tasks".format(len(tasks)))
         return tasks
@@ -91,6 +90,23 @@ class Omnifocus:
                 self.log.warn("Failed to close task {0}{1}".format(URI_PREFIX, identifier))
         else:
             self.log.warn("Failed to find task {0}{1}".format(URI_PREFIX, identifier))
+
+    @staticmethod
+    def init_task(task):
+        task_dict = dict(identifier=task.persistentIdentifier, name=task.task_name(),
+                    type=task.context_name(), note=task.note,
+                    uri="{0}{1}".format(URI_PREFIX, task.persistentIdentifier))
+
+        logging.debug("Created task {0}".format(task_dict))
+
+        if task.children:
+            child_tasks = []
+            for child_task in task.children:
+                child_tasks.append(Omnifocus.init_task(child_task))
+
+            task_dict['children'] = child_tasks
+
+        return task_dict
 
     @staticmethod
     def task_completed(identifier):

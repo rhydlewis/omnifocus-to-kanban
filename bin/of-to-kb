@@ -38,20 +38,32 @@ def main():
     external_ids = board.find_completed_card_ids()
     omnifocus.close_tasks([external_id for external_id in external_ids])
 
-    tasks = omnifocus.flagged_tasks()
-    new_tasks = []
-    for task in tasks:
-        identifier = task['identifier']
-        if not board.card_exists(identifier):
-            logging.debug(u'Adding %s to list of tasks to sync with board', identifier)
-            new_tasks.append(task)
-        else:
-            logging.debug(u'Ignoring %s since it exists on the board', identifier)
+    # tasks = omnifocus.flagged_tasks()
+    # missing_tasks = []
+    cards_added = board.add_cards(omnifocus.flagged_tasks().values())
 
-    if len(new_tasks) > 0:
-        board.add_cards(new_tasks)
+    if cards_added:
+        logging.info("Added {0} new cards to the board")
     else:
         logging.info("Board is up to date - no cards to sync")
+
+
+    # check which ids do not exist on the board
+    # for identifier in ids:
+    #     if not board.card_exists(identifier):
+    #         logging.debug(u'Adding %s to list of tasks to sync with board', identifier)
+    #         if tasks.has_key(identifier):
+    #             missing_tasks.append(tasks[identifier])
+    #         else:
+    #             logging.debug("Ignoring child task {0}".format(identifier))
+    #     else:
+    #         logging.debug(u'Ignoring %s since it exists on the board', identifier)
+    #
+    # # for those cards not on the board, add them
+    # if len(missing_tasks):
+    #     board.add_cards(missing_tasks)
+    # else:
+    #     logging.info("Board is up to date - no cards to sync")
 
 
 if __name__ == '__main__':
