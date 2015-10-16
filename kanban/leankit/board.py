@@ -116,7 +116,6 @@ class LeankitBoard(Converter):
                 # pre-existing card
                 logging.debug("Determining if existing card '{0}' has sub-tasks to add".
                               format(name))
-                continue
                 parent = self.get_card_with_external_id(identifier)
                 parent.add_tasks(child_tasks)
                 continue
