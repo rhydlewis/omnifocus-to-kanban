@@ -103,7 +103,7 @@ class LeankitCard(Converter):
         if self.has_task(identifier):
             return False
 
-        log.info(u"Adding sub task '{0}' to {1}".format(task['name'], self.title))
+        log.info("Adding sub task '{0}' to {1}".format(task['name'], self.title))
 
         name = task['name']
         note = task['note']
@@ -159,10 +159,10 @@ class LeankitCard(Converter):
 
                 for task in tasks:
                     external_id = task.external_card_id
-                    log.debug("Found task {0} {1} in taskboard lane {2} {3}".format(external_id,
-                                                                                    task.title,
-                                                                                    lane.id,
-                                                                                    lane.title))
+                    log.debug(u"Found task {0} {1} in taskboard lane {2} {3}".format(external_id,
+                                                                                     task.title,
+                                                                                     lane.id,
+                                                                                     lane.title))
                     if external_id:
                         self._tasks_with_external_ids.append(task)
 

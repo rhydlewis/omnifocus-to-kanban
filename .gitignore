@@ -3,3 +3,4 @@ config/trello-config.yaml
 log/omnifocus-to-kanban.log
 .idea/
 *.pyc
+sync.sh
