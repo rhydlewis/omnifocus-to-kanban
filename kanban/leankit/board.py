@@ -109,7 +109,8 @@ class LeankitBoard(Converter):
 
             # Check if card exists on board already; if it does and has no child tasks; skip to next
             if identifier in self.external_ids and not child_tasks:
-                logging.debug(u"Ignoring pre-existing card {0} '{1}'".format(identifier, name))
+                logging.debug(u"Ignoring pre-existing card {0} '{1}'".format(identifier,
+                                                                             name.decode("utf-8")))
                 continue
             elif identifier in self.external_ids and child_tasks:
                 # process child tasks - look for those that don't exist and add them to the
