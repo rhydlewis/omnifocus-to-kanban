@@ -65,9 +65,14 @@ class Omnifocus:
             order_by(Task.name)
 
         for task in results:
-            if not task.is_deferred():
-                identifier = task.persistentIdentifier
-                tasks[identifier] = Omnifocus.init_task(task)
+            if task.is_deferred():
+                continue
+            if task.blocked and not task.childrenCount:
+                continue
+
+            # print "{0} {1} {2} {3}".format(task.task_name(), task.childrenCount, task.blocked, task.is_deferred())
+            identifier = task.persistentIdentifier
+            tasks[identifier] = Omnifocus.init_task(task)
 
         self.log.debug("Found {0} flagged tasks".format(len(tasks)))
         return tasks
@@ -93,8 +98,13 @@ class Omnifocus:
 
     @staticmethod
     def init_task(task):
+        completed = None
+
+        if task.dateCompleted:
+            completed = True
+
         task_dict = dict(identifier=task.persistentIdentifier, name=task.task_name(),
-                    type=task.context_name(), note=task.note,
+                    type=task.context_name(), note=task.note, completed=completed,
                     uri="{0}{1}".format(URI_PREFIX, task.persistentIdentifier))
 
         logging.debug("Created task {0}".format(task_dict))
@@ -143,6 +153,7 @@ class Task(Base):
     dateDue = Column(Integer)
     dateToStart = Column(Integer)
     effectiveDateToStart = Column(Integer)
+    childrenCount = Column(Integer)
 
     note = Column('plainTextNote', Text)
 

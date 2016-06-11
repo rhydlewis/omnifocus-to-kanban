@@ -24,7 +24,7 @@ log = logging.getLogger(__name__)
 
 class LeankitConnector(object):
     def __init__(self, account, username=None, password=None):
-        host = 'https://' + account + '.leankitkanban.com'
+        host = 'https://' + account + '.leankit.com'
         self.base_api_url = host + '/Kanban/Api'
         self.http = LeankitConnector.configure_auth(username, password)
 

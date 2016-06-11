@@ -103,7 +103,11 @@ class LeankitCard(Converter):
         if self.has_task(identifier):
             return False
 
-        log.info("Adding sub task '{0}' to {1}".format(task['name'], self.title))
+        if task['completed']:
+            log.debug("Ignoring completed sub task '{0}'".format(task['name']))
+            return False
+        else:
+            log.debug("Adding sub task '{0}' to {1}".format(task['name'], self.title))
 
         name = task['name']
         note = task['note']
