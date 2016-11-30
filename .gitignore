@@ -4,3 +4,4 @@ log/omnifocus-to-kanban.log
 .idea/
 *.pyc
 sync.sh
+log/

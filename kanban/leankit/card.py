@@ -152,6 +152,11 @@ class LeankitCard(Converter):
 
     def classify_taskboard_cards(self, connector):
         from lane import LeankitLane
+
+        title = self.title
+        print ("Looking for tasks within taskboard of {0} {1}".format(self.external_card_id,
+                                                                         self.title))
+
         log.debug("Looking for tasks within taskboard of {0} {1}".format(self.external_card_id,
                                                                          self.title))
 

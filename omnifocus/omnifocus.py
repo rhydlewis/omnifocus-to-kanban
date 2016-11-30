@@ -67,7 +67,7 @@ class Omnifocus:
         for task in results:
             if task.is_deferred():
                 continue
-            if task.blocked and not task.childrenCount:
+            if task.blocked and not task.childrenCount and not task.task_name().startswith('WF'):
                 continue
 
             # print "{0} {1} {2} {3}".format(task.task_name(), task.childrenCount, task.blocked, task.is_deferred())
