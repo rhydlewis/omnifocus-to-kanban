@@ -1,3 +1,5 @@
+# Source code within this file is based on https://code.launchpad.net/lp2kanban
+
 import logging
 import operator
 import re
