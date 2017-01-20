@@ -1,4 +1,7 @@
 requests
-trello
+py-trello
 docopt
 sqlalchemy
+py-applescript
+pyobjc
+yaml

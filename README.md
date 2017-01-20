@@ -52,7 +52,14 @@ If you don't know the lane ID's for your board, use:
 
 #### Configuration
 
-TODO
+Copy the `trello-config.yaml.example` file as `trello-config.yaml`. Edit the file as follows:
+
+    app_key: your trello key
+    token: your trello token if you use a private board
+    board_id: your PK board id
+    default_list: the ID of the list in which you want the tool to add new cards into
+    completed_lists:
+        - ID's of lists in which completed cards are found
 
 #### Running
 
