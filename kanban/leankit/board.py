@@ -126,7 +126,7 @@ class LeankitBoard(Converter):
             note = card['note']
             card_type = card['type']
             type_id = self.determine_card_type_id(card['type'])
-            log.info("Creating card with details: name={0} id={1} type={2} ({3})".format(
+            log.debug("Creating card with details: name={0} id={1} type={2} ({3})".format(
                 name, identifier, card_type, type_id))
 
             new_card = lane.add_card()
@@ -150,7 +150,7 @@ class LeankitBoard(Converter):
         try:
             type_id = self.card_type_names[card_type]
         except KeyError:
-            log.info("Can't find card type {0} configured in LeanKit".format(card_type))
+            log.warn("Can't find card type {0} configured in LeanKit".format(card_type))
 
         return type_id
 

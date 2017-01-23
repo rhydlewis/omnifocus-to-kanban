@@ -113,7 +113,7 @@ class LeankitCard(Converter):
         note = task['note']
         card_type = task['type']
         type_id = self.lane.board.determine_card_type_id(task['type'])
-        log.info("Creating task with details: name={0} id={1} type={2} ({3})".format(
+        log.debug("Creating task with details: name={0} id={1} type={2} ({3})".format(
             name, identifier, card_type, type_id))
 
         new_task = LeankitTask.create(self)
@@ -177,13 +177,13 @@ class LeankitCard(Converter):
 
                     self._tasks.append(task)
         except IOError as e:
-            log.info("Failed to get taskboard for {0}".format(self.title))
+            log.warn("Failed to get taskboard for {0}".format(self.title))
 
     def _get_taskboard_lanes(self):
         try:
             return self.lane.board.connector.get(self._taskboard_url()).ReplyData[0]['Lanes']
         except IOError as e:
-            log.info("Failed to get taskboard for {0}".format(self.title))
+            log.warn("Failed to get taskboard for {0}".format(self.title))
         return None
 
     def _taskboard_url(self):

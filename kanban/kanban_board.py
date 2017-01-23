@@ -65,7 +65,7 @@ class Trello:
 
         for card in cards:
             if card.closed:
-                self.log.info("Ignoring closed card {0} ({1})".format(card.name, card.id))
+                self.log.debug("Ignoring closed card {0} ({1})".format(card.name, card.id))
             else:
                 self.log.debug("Looking for external id in {0}".format(card.name))
                 self.cards_with_external_ids.append(Trello.get_external_id(card))
@@ -84,7 +84,7 @@ class Trello:
 
     def clear_board(self):
         for card in self.board.all_cards():
-            self.log.info("Deleting {0} {1}".format(card.name, card.id))
+            self.log.debug("Deleting {0} {1}".format(card.name, card.id))
             card.delete()
 
     def card_exists(self, identifier):
@@ -92,7 +92,7 @@ class Trello:
 
     def add_cards(self, cards):
         default_list = self.board.get_list(self.config['default_list'])
-        self.log.info("Adding {0} cards to lane {1} ({2})".format(len(cards), default_list.name,
+        self.log.debug("Adding {0} cards to lane {1} ({2})".format(len(cards), default_list.name,
                                                                   default_list.id))
         for card in cards:
             name = card['name']
@@ -107,16 +107,16 @@ class Trello:
 
             try:
                 card.add_label(self.labels[card_type])
-                self.log.info("Creating card with details: name={0} id={1} type={2}".
+                self.log.debug("Creating card with details: name={0} id={1} type={2}".
                               format(name, identifier, card_type))
             except KeyError:
-                self.log.info("Can't find card type {0} configured in Trello".format(card_type))
-                self.log.info("Creating card with details: name={0} id={1} type=default".
+                self.log.debug("Can't find card type {0} configured in Trello".format(card_type))
+                self.log.debug("Creating card with details: name={0} id={1} type=default".
                               format(name, identifier))
 
     def find_completed_card_ids(self):
         completed_lists = self.config['completed_lists']
-        self.log.info("Looking for cards in completed lanes: {0}".format(completed_lists))
+        self.log.debug("Looking for cards in completed lanes: {0}".format(completed_lists))
         cards = []
 
         for list_id in completed_lists:

@@ -87,7 +87,7 @@ class Omnifocus:
             self.log.debug("Ignoring {0}{1}, already completed in Omnifocus".
                            format(URI_PREFIX, identifier))
         elif already_closed is not None:
-            self.log.info("Closing {0}{1}".format(URI_PREFIX, identifier))
+            self.log.debug("Closing {0}{1}".format(URI_PREFIX, identifier))
             scpt = applescript.AppleScript(CLOSE_TASK_SCRIPT)
             result = scpt.call('close_task', identifier)
 
