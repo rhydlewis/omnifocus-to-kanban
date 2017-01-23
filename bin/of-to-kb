@@ -26,13 +26,13 @@ def main():
     board = None
 
     if opts['--trello']:
-        logging.info("Connecting to Trello board")
+        logging.debug("Connecting to Trello board")
         board = Trello()
     elif opts['--leankit']:
-        logging.info("Connecting to Leankit board")
+        logging.debug("Connecting to Leankit board")
         board = LeanKit()
     else:
-        exit(-1)
+        raise ValueError("Couldn't find a choice between LeanKit or Trello...")
 
     omnifocus = Omnifocus()
     external_ids = board.find_completed_card_ids()
@@ -43,10 +43,9 @@ def main():
     cards_added = board.add_cards(omnifocus.flagged_tasks().values())
 
     if cards_added:
-        logging.info("Added {0} new cards to the board")
+        logging.debug("Added {0} new cards to the board")
     else:
-        logging.info("Board is up to date - no cards to sync")
-
+        logging.debug("Board is up to date - no cards to sync")
 
     # check which ids do not exist on the board
     # for identifier in ids:
@@ -72,4 +71,11 @@ if __name__ == '__main__':
     logging.debug("sys.executable: %s", sys.executable)
     logging.debug("os.getcwd(): %s", os.getcwd())
 
-    main()
+    try:
+        main()
+    except ValueError as e:
+        print "Something's not right\n", e
+        sys.exit(-1)
+    except IOError as e:
+        print "Failed to connect to kanban board"
+        sys.exit(-1)

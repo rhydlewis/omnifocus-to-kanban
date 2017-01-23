@@ -96,7 +96,7 @@ class LeankitBoard(Converter):
 
     def add_cards(self, cards):
         lane = self.get_default_drop_lane()
-        log.info("Checking which of the {0} cards to add to lane {1} ({2})".
+        log.debug("Checking which of the {0} cards to add to lane {1} ({2})".
                  format(len(cards), lane.title, lane.id))
 
         cards_added = 0

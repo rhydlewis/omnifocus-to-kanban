@@ -22,14 +22,14 @@ class LeanKit:
     def find_completed_card_ids(self):
         lanes = self.config['completed_lanes']
         card_ids = self.board.cards_with_external_ids(lanes)
-        self.log.info("Found {0} cards in completed lanes".format(len(card_ids)))
+        self.log.debug("Found {0} cards in completed lanes".format(len(card_ids)))
         card_ids = card_ids + self.find_completed_cards_in_taskboards()
         self.log.debug("Completed cards with external ids: {0}".format(card_ids))
         return card_ids
 
     def find_completed_cards_in_taskboards(self):
         taskboard_cards = self.board.done_taskboard_cards()
-        self.log.info("Found {0} completed cards in taskboards".format(len(taskboard_cards)))
+        self.log.debug("Found {0} completed cards in taskboards".format(len(taskboard_cards)))
         return taskboard_cards
 
     def card_exists(self, identifier):
@@ -125,7 +125,7 @@ class Trello:
 
         # [cards.extend([card.external_card_id for card in self.trello.lane.get(lane).cards
         #                if len(card.external_card_id) > 1]) for lane in lanes]
-        self.log.info("Found {0} completed cards on the board".format(len(cards)))
+        self.log.debug("Found {0} completed cards on the board".format(len(cards)))
         self.log.debug("External ids: {0}".format(cards))
         return cards
 

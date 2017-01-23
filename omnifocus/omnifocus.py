@@ -92,9 +92,9 @@ class Omnifocus:
             result = scpt.call('close_task', identifier)
 
             if not result:
-                self.log.warn("Failed to close task {0}{1}".format(URI_PREFIX, identifier))
+                self.log.debug("Failed to close task {0}{1}".format(URI_PREFIX, identifier))
         else:
-            self.log.warn("Failed to find task {0}{1}".format(URI_PREFIX, identifier))
+            self.log.debug("Failed to find task {0}{1}".format(URI_PREFIX, identifier))
 
     @staticmethod
     def init_task(task):
