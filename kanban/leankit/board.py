@@ -96,6 +96,10 @@ class LeankitBoard(Converter):
 
     def add_cards(self, cards):
         lane = self.get_default_drop_lane()
+
+        if not lane:
+            raise ValueError("Default drop lane not set - use LeanKit's Board Layout Editor to designate a default drop lane")
+
         log.debug("Checking which of the {0} cards to add to lane {1} ({2})".
                  format(len(cards), lane.title, lane.id))
 
@@ -250,10 +254,11 @@ class LeankitBoard(Converter):
         return flat_lanes[lane_id]
 
     def get_default_drop_lane(self):
+        default_drop_lane = None
         for lane in self.lanes.values():
             if lane.is_default_drop_lane:
-                return lane
-        return None
+                default_drop_lane = lane
+        return default_drop_lane
 
     def get_card_with_external_id(self, identifier):
         for item in self._cards_with_external_ids:
