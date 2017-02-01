@@ -36,14 +36,10 @@ def main():
 
     omnifocus = Omnifocus()
     external_ids = board.find_completed_card_ids()
-    omnifocus.close_tasks([external_id for external_id in external_ids])
+    tasks_closed = omnifocus.close_tasks([external_id for external_id in external_ids])
     cards_added = board.add_cards(omnifocus.flagged_tasks().values())
 
-    if cards_added:
-        result = "Added {0} new cards to the board"
-    else:
-        result = "Board is up to date - no cards to sync"
-
+    result = "Added {0} card(s) and closed {1} tasks".format(cards_added, tasks_closed)
     logging.debug(result)
     print result
 

@@ -149,6 +149,8 @@ class LeankitBoard(Converter):
                 new_card.add_tasks(child_tasks)
                 cards_added += 1
 
+        return cards_added
+
     def determine_card_type_id(self, card_type):
         type_id = None
         try:

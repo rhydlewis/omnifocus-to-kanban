@@ -78,10 +78,14 @@ class Omnifocus:
         return tasks
 
     def close_tasks(self, identifiers):
+        tasks_closed = 0
         for identifier in identifiers:
-            self.close_task(identifier)
+            if self.close_task(identifier):
+                tasks_closed += 1
+        return tasks_closed
 
     def close_task(self, identifier):
+        success = False
         already_closed = Omnifocus.task_completed(identifier)
         if already_closed:
             self.log.debug("Ignoring {0}{1}, already completed in Omnifocus".
@@ -91,10 +95,14 @@ class Omnifocus:
             scpt = applescript.AppleScript(CLOSE_TASK_SCRIPT)
             result = scpt.call('close_task', identifier)
 
-            if not result:
+            if result:
+                success = True
+            else:
                 self.log.debug("Failed to close task {0}{1}".format(URI_PREFIX, identifier))
         else:
             self.log.debug("Failed to find task {0}{1}".format(URI_PREFIX, identifier))
+
+        return success
 
     @staticmethod
     def init_task(task):
