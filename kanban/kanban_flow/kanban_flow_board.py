@@ -73,7 +73,11 @@ class KanbanFlowBoard:
     def create_task(self, name, column, identifier, swimlane, description='', _type=None, subtasks=None):
         color = None
         if _type:
-            color = self.types[_type]
+            type_config = self.types[_type]
+            color = type_config['color']
+
+            if 'column' in type_config:
+                column = type_config['column']
 
         updates_made = 0
 
@@ -90,14 +94,16 @@ class KanbanFlowBoard:
         if subtasks:
             for subtask in subtasks:
                 self.log.debug("Adding subtask '{0}' to task {1} with id {2}".format(subtask, name, task_id))
-                self.add_subtask(task_id, subtask)
+                self.create_subtask(task_id, subtask)
                 updates_made += 1
 
         return updates_made
 
     def create_subtask(self, task_id, subtask):
         name = subtask['name']
-        self.request("https://kanbanflow.com/api/v1/tasks/{0}/subtasks".format(task_id), {"name": name})
+        completed = subtask['completed']
+        self.request("https://kanbanflow.com/api/v1/tasks/{0}/subtasks".format(task_id), {"name": name,
+                                                                                          "finished": completed})
 
     def update_task(self, identifier, name, note, subtasks=None):
         task = self.all_tasks[identifier]
@@ -126,13 +132,10 @@ class KanbanFlowBoard:
                 if subtask_name not in existing_subtask_names:
                     self.log.debug("Adding new subtask '{0}' to '{1}'".format(subtask_name.decode("utf-8"),
                                                                               name.decode("utf-8")))
-                    self.create_subtask(task_id, subtask_name)
+                    self.create_subtask(task_id, subtask)
                     updates_made += 1
 
         return updates_made
-
-    def add_subtask(self, task_id, name):
-        self.request("https://kanbanflow.com/api/v1/tasks/{0}/subtasks".format(task_id), {"name": name})
 
     def get_column_name(self, _id):
         columns = self.board_details["columns"]
