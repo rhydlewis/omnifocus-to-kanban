@@ -3,7 +3,7 @@
 """Omnifocus to Kanban
 
 Usage:
-  of-to-kb.py (--trello | --leankit)
+  of-to-kb.py (--trello | --leankit | --kanbanflow)
   of-to-kb.py -h | --help
   of-to-kb.py --version
 
@@ -18,12 +18,11 @@ from docopt import docopt
 
 sys.path.insert(0, '.')
 from omnifocus import Omnifocus
-from kanban import LeanKit, Trello
+from kanban import LeanKit, Trello, KanbanFlow
 
 
 def main():
     opts = docopt(__doc__)
-    board = None
 
     if opts['--trello']:
         logging.debug("Connecting to Trello board")
@@ -31,15 +30,18 @@ def main():
     elif opts['--leankit']:
         logging.debug("Connecting to Leankit board")
         board = LeanKit()
+    elif opts['--kanbanflow']:
+        logging.debug("Connecting to KanbanFlow board")
+        board = KanbanFlow()
     else:
-        raise ValueError("Couldn't find a choice between LeanKit or Trello...")
+        raise ValueError("Couldn't find a choice between KanbanFlow, LeanKit or Trello...")
 
     omnifocus = Omnifocus()
     external_ids = board.find_completed_card_ids()
     tasks_closed = omnifocus.close_tasks([external_id for external_id in external_ids])
     cards_added = board.add_cards(omnifocus.flagged_tasks().values())
 
-    result = "Added {0} card(s) and closed {1} tasks".format(cards_added, tasks_closed)
+    result = "Updated {0} card(s) and closed {1} tasks".format(cards_added, tasks_closed)
     logging.debug(result)
     print result
 

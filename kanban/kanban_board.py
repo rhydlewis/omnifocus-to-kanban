@@ -5,6 +5,7 @@ import re
 
 from trello import TrelloClient
 from leankit import LeankitKanban
+from kanban_flow import KanbanFlowBoard
 
 
 class LeanKit:
@@ -37,6 +38,32 @@ class LeanKit:
 
     def add_cards(self, cards):
         return self.board.add_cards(cards)
+
+
+class KanbanFlow:
+    kb = None
+    log = logging.getLogger(__name__)
+
+    def __init__(self):
+        self.config = load_config("config/kanbanflow-config.yaml")
+
+        token = self.config['token']
+        default_drop_lane = self.config['default_drop_lane']
+        types = self.config['card_types']
+        completed_columns = self.config['completed_lanes']
+
+        self.kb = KanbanFlowBoard(token, default_drop_lane, types, completed_columns)
+
+    def find_completed_card_ids(self):
+        return self.kb.completed_tasks
+
+    def card_exists(self, identifier):
+        return identifier in self.kb.all_tasks
+
+    def add_cards(self, cards):
+        cards_added = self.kb.create_tasks(cards)
+        self.log.debug("Made {0} API requests in this session".format(self.kb.api_requests))
+        return cards_added
 
 
 class Trello:
@@ -92,8 +119,7 @@ class Trello:
 
     def add_cards(self, cards):
         default_list = self.board.get_list(self.config['default_list'])
-        self.log.debug("Adding {0} cards to lane {1} ({2})".format(len(cards), default_list.name,
-                                                                  default_list.id))
+        self.log.debug("Adding {0} cards to lane {1} ({2})".format(len(cards), default_list.name, default_list.id))
         for card in cards:
             name = card['name']
             identifier = card['identifier']
@@ -108,11 +134,11 @@ class Trello:
             try:
                 card.add_label(self.labels[card_type])
                 self.log.debug("Creating card with details: name={0} id={1} type={2}".
-                              format(name, identifier, card_type))
+                               format(name, identifier, card_type))
             except KeyError:
                 self.log.debug("Can't find card type {0} configured in Trello".format(card_type))
                 self.log.debug("Creating card with details: name={0} id={1} type=default".
-                              format(name, identifier))
+                               format(name, identifier))
 
     def find_completed_card_ids(self):
         completed_lists = self.config['completed_lists']
