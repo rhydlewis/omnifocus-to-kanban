@@ -1,6 +1,7 @@
 import requests
 import logging
 import base64
+from operator import itemgetter
 
 COMMENT_PREFIX = "external_id="
 
@@ -35,6 +36,7 @@ class KanbanFlowBoard:
 
             for task in tasks:
                 _id = task["_id"]
+                self.log.debug("{0}".format(task["name"]))
                 comments = self.request("https://kanbanflow.com/api/v1/tasks/{0}/comments".format(_id))
                 comment_json = comments.json()
                 if comment_json:
@@ -92,7 +94,8 @@ class KanbanFlowBoard:
         self.request("https://kanbanflow.com/api/v1/tasks/{0}/comments".format(task_id), {"text": comment})
 
         if subtasks:
-            for subtask in subtasks:
+            sorted_subtasks = sorted(subtasks, key=itemgetter('name'))
+            for subtask in sorted_subtasks:
                 self.log.debug("Adding subtask '{0}' to task {1} with id {2}".format(subtask, name, task_id))
                 self.create_subtask(task_id, subtask)
                 updates_made += 1
@@ -127,7 +130,8 @@ class KanbanFlowBoard:
             updates_made += 1
 
         if subtasks:
-            for subtask in subtasks:
+            sorted_subtasks = sorted(subtasks, key=itemgetter('name'))
+            for subtask in sorted_subtasks:
                 subtask_name = subtask['name']
                 if subtask_name not in existing_subtask_names:
                     self.log.debug("Adding new subtask '{0}' to '{1}'".format(subtask_name.decode("utf-8"),

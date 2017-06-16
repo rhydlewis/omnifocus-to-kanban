@@ -112,8 +112,8 @@ class Omnifocus:
             completed = True
 
         task_dict = dict(identifier=task.persistentIdentifier, name=task.task_name(),
-                    type=task.context_name(), note=task.note, completed=completed,
-                    uri="{0}{1}".format(URI_PREFIX, task.persistentIdentifier))
+                         type=task.context_name(), note=task.note, completed=completed,
+                         uri="{0}{1}".format(URI_PREFIX, task.persistentIdentifier))
 
         logging.debug("Created task {0}".format(task_dict))
 
@@ -197,3 +197,8 @@ class Task(Base):
 
     def context_name(self):
         return self.context.name if self.context else 'None'
+
+
+if __name__ == '__main__':
+    omnifocus = Omnifocus()
+    print omnifocus.flagged_tasks()

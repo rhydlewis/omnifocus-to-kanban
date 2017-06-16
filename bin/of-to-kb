@@ -10,6 +10,7 @@ Usage:
 """
 import sys
 import os
+from timeit import default_timer as timer
 
 import logging
 import logging.config
@@ -22,6 +23,8 @@ from kanban import LeanKit, Trello, KanbanFlow
 
 
 def main():
+    start = timer()
+
     opts = docopt(__doc__)
 
     if opts['--trello']:
@@ -41,7 +44,9 @@ def main():
     tasks_closed = omnifocus.close_tasks([external_id for external_id in external_ids])
     cards_added = board.add_cards(omnifocus.flagged_tasks().values())
 
-    result = "Updated {0} card(s) and closed {1} tasks".format(cards_added, tasks_closed)
+    elapsed_time = timer() - start
+
+    result = "{0} update(s), {1} task(s) closed ({2}s)".format(cards_added, tasks_closed, round(elapsed_time, 2))
     logging.debug(result)
     print result
 
