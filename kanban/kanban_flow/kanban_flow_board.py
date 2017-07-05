@@ -36,7 +36,7 @@ class KanbanFlowBoard:
 
             for task in tasks:
                 _id = task["_id"]
-                self.log.debug("{0}".format(task["name"]))
+                # self.log.debug("{0}".format(task["name"]))
                 comments = self.request("https://kanbanflow.com/api/v1/tasks/{0}/comments".format(_id))
                 comment_json = comments.json()
                 if comment_json:

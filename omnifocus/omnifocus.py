@@ -65,9 +65,21 @@ class Omnifocus:
             order_by(Task.name)
 
         for task in results:
+            name = task.task_name()
+            blocked = task.blocked
+            child_count = task.childrenCount
+            has_next_task = task.containsNextTask
+            is_wf_task = name.startswith('WF')
+
+            self.log.debug("Checking whether to include task {0} (blocked: {1}, child_count: {2}, ".
+                           format(name, blocked, child_count) +
+                           "has_next_task: {0}, is_wf: {1}".format(has_next_task, is_wf_task))
+
             if task.is_deferred():
                 continue
-            if task.blocked and not task.childrenCount and not task.task_name().startswith('WF'):
+            if child_count and not has_next_task:
+                continue
+            if blocked and not child_count and not is_wf_task:
                 continue
 
             # print "{0} {1} {2} {3}".format(task.task_name(), task.childrenCount, task.blocked, task.is_deferred())
@@ -171,6 +183,8 @@ class Task(Base):
     parent_id = Column('parent', Text, ForeignKey('Task.persistentIdentifier'))
 
     children = relationship('Task', primaryjoin='Task.persistentIdentifier == Task.parent_id')
+
+    containsNextTask = Column(Integer)
 
     def __repr__(self):
         return self.name

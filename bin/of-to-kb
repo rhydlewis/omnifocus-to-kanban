@@ -61,6 +61,8 @@ if __name__ == '__main__':
         main()
     except ValueError as e:
         print "Something's not right\n", e
+        import traceback
+        traceback.print_exc()
         sys.exit(-1)
     except IOError as e:
         print "Failed to connect to kanban board"
