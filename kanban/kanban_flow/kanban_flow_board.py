@@ -125,7 +125,7 @@ class KanbanFlowBoard:
             return updates_made
 
         if len(properties):
-            self.log.debug("Updatign pre-existing task {0} '{1}'".format(identifier, name.decode("utf-8")))
+            self.log.debug("Updating pre-existing task {0} '{1}'".format(identifier, name.decode("utf-8")))
             self.request("https://kanbanflow.com/api/v1/tasks/{0}".format(task_id), properties)
             updates_made += 1
 

@@ -71,15 +71,16 @@ class Omnifocus:
             has_next_task = task.containsNextTask
             is_wf_task = name.startswith('WF')
 
-            self.log.debug("Checking whether to include task {0} (blocked: {1}, child_count: {2}, ".
-                           format(name, blocked, child_count) +
-                           "has_next_task: {0}, is_wf: {1}".format(has_next_task, is_wf_task))
-
             if task.is_deferred():
+                self.log.debug("Ignoring deferred task '{0}'".format(name))
                 continue
-            if child_count and not has_next_task:
+            if (child_count and not has_next_task) and (child_count and not is_wf_task):
+                self.log.debug("Ignoring task '{0}' with {1} sub-tasks but doesn't have next task {2}".format(
+                    name, child_count, has_next_task))
                 continue
             if blocked and not child_count and not is_wf_task:
+                self.log.debug("Ignoring blocked task '{0}' with {1} sub-tasks and isn't a WF task".format(
+                    name, child_count, is_wf_task))
                 continue
 
             # print "{0} {1} {2} {3}".format(task.task_name(), task.childrenCount, task.blocked, task.is_deferred())
@@ -127,14 +128,14 @@ class Omnifocus:
                          type=task.context_name(), note=task.note, completed=completed,
                          uri="{0}{1}".format(URI_PREFIX, task.persistentIdentifier))
 
-        logging.debug("Created task {0}".format(task_dict))
-
         if task.children:
             child_tasks = []
             for child_task in task.children:
                 child_tasks.append(Omnifocus.init_task(child_task))
 
             task_dict['children'] = child_tasks
+
+        logging.debug("Created task {0}".format(task_dict))
 
         return task_dict
 
