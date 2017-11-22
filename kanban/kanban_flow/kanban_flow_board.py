@@ -121,11 +121,11 @@ class KanbanFlowBoard:
             properties['description'] = note
 
         if not len(properties) and not subtasks:
-            self.log.debug("Nothing to update in task {0} '{1}'".format(identifier, name.decode("utf-8")))
+            self.log.debug("Nothing to update in task {0} '{1}'".format(identifier, name))
             return updates_made
 
         if len(properties):
-            self.log.debug("Updating pre-existing task {0} '{1}'".format(identifier, name.decode("utf-8")))
+            self.log.debug("Updating pre-existing task {0} '{1}'".format(identifier, name))
             self.request("https://kanbanflow.com/api/v1/tasks/{0}".format(task_id), properties)
             updates_made += 1
 
@@ -134,8 +134,7 @@ class KanbanFlowBoard:
             for subtask in sorted_subtasks:
                 subtask_name = subtask['name']
                 if subtask_name not in existing_subtask_names:
-                    self.log.debug("Adding new subtask '{0}' to '{1}'".format(subtask_name.decode("utf-8"),
-                                                                              name.decode("utf-8")))
+                    self.log.debug("Adding new subtask '{0}' to '{1}'".format(subtask_name, name))
                     self.create_subtask(task_id, subtask)
                     updates_made += 1
 

@@ -73,14 +73,19 @@ class Omnifocus:
 
             if task.is_deferred():
                 self.log.debug("Ignoring deferred task '{0}'".format(name))
+                # print("Ignoring deferred task '{0}'".format(name))
                 continue
             if (child_count and not has_next_task) and (child_count and not is_wf_task):
                 self.log.debug("Ignoring task '{0}' with {1} sub-tasks but doesn't have next task {2}".format(
                     name, child_count, has_next_task))
+                # print("Ignoring task '{0}' with {1} sub-tasks but doesn't have next task {2}".format(
+                #     name, child_count, has_next_task))
                 continue
             if blocked and not child_count and not is_wf_task:
                 self.log.debug("Ignoring blocked task '{0}' with {1} sub-tasks and isn't a WF task".format(
                     name, child_count, is_wf_task))
+                # print("Ignoring blocked task '{0}' with {1} sub-tasks and isn't a WF task".format(
+                #     name, child_count, is_wf_task))
                 continue
 
             # print "{0} {1} {2} {3}".format(task.task_name(), task.childrenCount, task.blocked, task.is_deferred())
