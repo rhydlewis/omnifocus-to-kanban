@@ -3,7 +3,7 @@
 """Omnifocus to Kanban
 
 Usage:
-  of-to-kb.py (--trello | --leankit | --kanbanflow)
+  of-to-kb.py (--trello | --leankit | --kanbanflow) [--eval]
   of-to-kb.py -h | --help
   of-to-kb.py --version
 
@@ -39,15 +39,21 @@ def main():
     else:
         raise ValueError("Couldn't find a choice between KanbanFlow, LeanKit or Trello...")
 
-    omnifocus = Omnifocus()
     external_ids = board.find_completed_card_ids()
-    tasks_closed = omnifocus.close_tasks([external_id for external_id in external_ids])
-    cards_added = board.add_cards(omnifocus.flagged_tasks().values())
 
-    elapsed_time = timer() - start
+    omnifocus = Omnifocus()
+    cards_to_add = omnifocus.flagged_tasks().values()
 
-    result = "{0} update(s), {1} task(s) closed ({2}s)".format(cards_added, tasks_closed, round(elapsed_time, 2))
-    logging.debug(result)
+    if not opts['--eval']:
+        tasks_closed = omnifocus.close_tasks([external_id for external_id in external_ids])
+        cards_added = board.add_cards(cards_to_add)
+        elapsed_time = timer() - start
+        result = "{0} update(s), {1} task(s) closed ({2}s)".format(cards_added, tasks_closed, round(elapsed_time, 2))
+        logging.debug(result)
+    else:
+        result = "To close: {0}".format(external_ids)
+        result = result + "\n" + "To add: {0}".format(cards_to_add)
+
     print result
 
 

@@ -31,7 +31,7 @@ CLOSE_TASK_SCRIPT = '''
         on close_task(task_id)
             tell application "OmniFocus"
                 set completed_task to task id task_id of default document
-                set completed of completed_task to true
+                mark complete completed_task
                 return completed of completed_task
             end tell
         end run
@@ -106,17 +106,12 @@ class Omnifocus:
         success = False
         already_closed = Omnifocus.task_completed(identifier)
         if already_closed:
-            self.log.debug("Ignoring {0}{1}, already completed in Omnifocus".
-                           format(URI_PREFIX, identifier))
+            self.log.debug("Ignoring {0}{1}, already completed in Omnifocus".format(URI_PREFIX, identifier))
         elif already_closed is not None:
             self.log.debug("Closing {0}{1}".format(URI_PREFIX, identifier))
             scpt = applescript.AppleScript(CLOSE_TASK_SCRIPT)
-            result = scpt.call('close_task', identifier)
-
-            if result:
-                success = True
-            else:
-                self.log.debug("Failed to close task {0}{1}".format(URI_PREFIX, identifier))
+            scpt.call('close_task', identifier)
+            success = True
         else:
             self.log.debug("Failed to find task {0}{1}".format(URI_PREFIX, identifier))
 
@@ -221,4 +216,4 @@ class Task(Base):
 
 if __name__ == '__main__':
     omnifocus = Omnifocus()
-    print omnifocus.flagged_tasks()
+    print omnifocus.close_task("kDHn70dxBRW")
