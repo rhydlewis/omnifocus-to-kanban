@@ -17,7 +17,7 @@ URI_PREFIX = 'omnifocus:///task/'
 OFFSET = 978307200
 ENCODING = 'utf-8'
 
-TASK_COMPLETE_SCRIPT = '''
+IS_TASK_COMPLETE = """
         on task_completed(task_id)
             tell application "OmniFocus"
                 try
@@ -26,16 +26,16 @@ TASK_COMPLETE_SCRIPT = '''
                 end try
             end tell
         end run
-    '''
-CLOSE_TASK_SCRIPT = '''
+    """
+CLOSE_TASK = """
         on close_task(task_id)
             tell application "OmniFocus"
                 set completed_task to task id task_id of default document
+                set task_title to name of completed_task
                 mark complete completed_task
-                return completed of completed_task
             end tell
         end run
-    '''
+    """
 
 Base = declarative_base()
 
@@ -96,26 +96,61 @@ class Omnifocus:
         return tasks
 
     def close_tasks(self, identifiers):
-        tasks_closed = 0
+        tasks_closed = []
+        repeating_tasks_closed = []
         for identifier in identifiers:
-            if self.close_task(identifier):
-                tasks_closed += 1
-        return tasks_closed
+            _id = identifier["id"]
+            name = identifier["name"]
 
-    def close_task(self, identifier):
-        success = False
-        already_closed = Omnifocus.task_completed(identifier)
-        if already_closed:
-            self.log.debug("Ignoring {0}{1}, already completed in Omnifocus".format(URI_PREFIX, identifier))
-        elif already_closed is not None:
-            self.log.debug("Closing {0}{1}".format(URI_PREFIX, identifier))
-            scpt = applescript.AppleScript(CLOSE_TASK_SCRIPT)
-            scpt.call('close_task', identifier)
-            success = True
-        else:
-            self.log.debug("Failed to find task {0}{1}".format(URI_PREFIX, identifier))
+            close_task_result = self.close_task(_id, name)
 
-        return success
+            if close_task_result == 1:
+                tasks_closed.append(identifier)
+            elif close_task_result == 2:
+                repeating_tasks_closed.append(identifier)
+
+        return tasks_closed, repeating_tasks_closed
+
+    def close_task(self, _id, name):
+        try:
+            of_task_name, rep_rule = self.get_task_details(_id)
+            already_closed = Omnifocus.task_completed(_id)
+
+            if already_closed:
+                self.log.debug(u"Ignoring {0}{1} ({2}), already completed in Omnifocus".format(URI_PREFIX, _id, name))
+                return 0
+
+            if name != of_task_name:
+                self.log.debug(
+                    u"Ignoring {0}{1} ({2}), names don't match ({3})".format(URI_PREFIX, _id, name, of_task_name))
+                return 0
+
+            rep_type = 1
+
+            if rep_rule is None:
+                self.log.debug(u"Closing {0}{1} ({2})".format(URI_PREFIX, _id, name))
+            else:
+                self.log.debug(u"Closing repeating task {0}{1} ({2})".format(URI_PREFIX, _id, name))
+                rep_type = 2
+
+            scpt = applescript.AppleScript(CLOSE_TASK)
+            scpt.call('close_task', _id)
+
+            return rep_type
+        except ValueError as e:
+            self.log.debug(u"Ignoring {0}{1} ({2}), not found in Omnifocus".format(URI_PREFIX, _id, name))
+            return 0
+
+    def get_task_details(self, _id):
+        result = self.session.query(Task).filter(Task.persistentIdentifier.is_(_id)).first()
+
+        if result is None:
+            raise ValueError("{0} not found in Omnifocus".format(_id))
+
+        name = result.name
+        rep_rule = result.repetitionMethodString
+        return name, rep_rule
+
 
     @staticmethod
     def init_task(task):
@@ -141,7 +176,8 @@ class Omnifocus:
 
     @staticmethod
     def task_completed(identifier):
-        return applescript.AppleScript(TASK_COMPLETE_SCRIPT).call('task_completed', identifier)
+        return applescript.AppleScript(IS_TASK_COMPLETE).call('task_completed', identifier)
+
 
 
 class ProjectInfo(Base):
@@ -185,6 +221,8 @@ class Task(Base):
 
     children = relationship('Task', primaryjoin='Task.persistentIdentifier == Task.parent_id')
 
+    repetitionMethodString = Column(Text)
+
     containsNextTask = Column(Integer)
 
     def __repr__(self):
@@ -208,7 +246,7 @@ class Task(Base):
         return deferred
 
     def task_name(self):
-        return self.name.encode(ENCODING)
+        return self.name#.encode(ENCODING)
 
     def context_name(self):
         return self.context.name if self.context else 'None'
@@ -216,4 +254,4 @@ class Task(Base):
 
 if __name__ == '__main__':
     omnifocus = Omnifocus()
-    print omnifocus.close_task("kDHn70dxBRW")
+    print omnifocus.flagged_tasks()

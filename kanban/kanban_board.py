@@ -65,6 +65,10 @@ class KanbanFlow:
         self.log.debug("Made {0} API requests in this session".format(self.kb.api_requests))
         return cards_added
 
+    def remove_comments_from_repeating_tasks(self, identifiers):
+        for id in identifiers:
+            self.kb.delete_external_id_comment(id['id'])
+
 
 class Trello:
     COMMENT_PREFIX = "external_id="

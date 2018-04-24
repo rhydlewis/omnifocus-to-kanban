@@ -40,18 +40,21 @@ def main():
         raise ValueError("Couldn't find a choice between KanbanFlow, LeanKit or Trello...")
 
     external_ids = board.find_completed_card_ids()
-
+    
     omnifocus = Omnifocus()
-    cards_to_add = omnifocus.flagged_tasks().values()
 
     if not opts['--eval']:
-        tasks_closed = omnifocus.close_tasks([external_id for external_id in external_ids])
+        tasks_closed, repeating_tasks_closed = omnifocus.close_tasks(external_ids)
+        cards_to_add = omnifocus.flagged_tasks().values()
+        board.remove_comments_from_repeating_tasks(repeating_tasks_closed)
         cards_added = board.add_cards(cards_to_add)
         elapsed_time = timer() - start
-        result = "{0} update(s), {1} task(s) closed ({2}s)".format(cards_added, tasks_closed, round(elapsed_time, 2))
+        result = "{0} update(s), {1} task(s) closed & {2} repeating tasks closed in {3}s".\
+            format(cards_added, len(tasks_closed), len(repeating_tasks_closed), round(elapsed_time, 2))
         logging.debug(result)
     else:
         result = "To close: {0}".format(external_ids)
+        cards_to_add = omnifocus.flagged_tasks().values()
         result = result + "\n" + "To add: {0}".format(cards_to_add)
 
     print result
