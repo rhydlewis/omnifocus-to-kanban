@@ -6,3 +6,4 @@ log/omnifocus-to-kanban.log
 *.pyc
 sync.sh
 log/
+venv/

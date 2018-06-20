@@ -4,4 +4,4 @@ docopt
 sqlalchemy
 py-applescript
 pyobjc
-yaml
+PyYaml
