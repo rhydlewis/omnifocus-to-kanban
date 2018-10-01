@@ -33,7 +33,7 @@ class KanbanFlowBoard:
             is_completed_column = column_id in completed_columns
 
             self.log.debug(u"Found {0} tasks in {1} (completed column? {2})".format(len(tasks), column_name,
-                                                                                   is_completed_column))
+                                                                                    is_completed_column))
 
             for task in tasks:
                 _id = task["_id"]

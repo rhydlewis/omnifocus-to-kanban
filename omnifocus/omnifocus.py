@@ -6,12 +6,12 @@ import os
 import re
 from datetime import datetime
 
-from sqlalchemy import Column, Integer, Text, ForeignKey, or_, create_engine
-from sqlalchemy.orm import relationship, backref, sessionmaker
-from sqlalchemy.ext.declarative import declarative_base
+import sqlite3
 
-DB_LOCATION = ("/Library/Containers/com.omnigroup.OmniFocus2/"
-               "Data/Library/Caches/com.omnigroup.OmniFocus2/OmniFocusDatabase2")
+# DB_LOCATION = ("/Library/Containers/com.omnigroup.OmniFocus2/"
+#                "Data/Library/Caches/com.omnigroup.OmniFocus2/OmniFocusDatabase2")
+DB_LOCATION = "/Library/Containers/com.omnigroup.OmniFocus3/Data/Library/Application Support/" \
+              "OmniFocus/OmniFocus Caches/OmniFocusDatabase"
 DB_PREFIX = ''
 URI_PREFIX = 'omnifocus:///task/'
 OFFSET = 978307200
@@ -37,63 +37,131 @@ CLOSE_TASK = """
         end run
     """
 
-Base = declarative_base()
+FLAGGED_TASKS_SQL = """
+SELECT Task.persistentIdentifier,
+       Task.name,
+       Task.plainTextNote,
+       Task.containingProjectInfo,
+       Task.blocked,
+       Task.blockedByFutureStartDate,
+       Task.flagged,
+       Task.effectiveFlagged,
+       Task.dateCompleted,
+       Task.dateDue,
+       Task.dateToStart,
+       Task.effectiveDateToStart,
+       Task.childrenCount,
+       Task.repetitionMethodString,
+       Task.containsNextTask,
+       ProjectInfo.status,
+       Context.name AS "tag"
+FROM Task
+JOIN TaskToTag ON TaskToTag.task = Task.persistentIdentifier
+JOIN Context ON Context.persistentIdentifier = TaskToTag.tag
+JOIN ProjectInfo ON ProjectInfo.task = Task.containingProjectInfo
+WHERE Task.flagged = 1
+  AND Task.effectiveFlagged = 1
+  AND Task.dateCompleted IS NULL
+  AND Task.blockedByFutureStartDate IS 0
+  AND ProjectInfo.status NOT IN ('done',
+                                 'dropped',
+                                 'inactive')
+"""
+
+CHILD_TASKS_SQL = """
+SELECT Task.persistentIdentifier,
+       Task.name,
+       Task.plainTextNote,
+       Task.containingProjectInfo,
+       Task.blocked,
+       Task.blockedByFutureStartDate,
+       Task.flagged,
+       Task.effectiveFlagged,
+       Task.dateCompleted,
+       Task.dateDue,
+       Task.dateToStart,
+       Task.effectiveDateToStart,
+       Task.childrenCount,
+       Task.repetitionMethodString,
+       Task.containsNextTask,
+       ProjectInfo.status,
+       Context.name AS "tag"
+FROM Task
+JOIN TaskToTag ON TaskToTag.task = Task.persistentIdentifier
+JOIN Context ON Context.persistentIdentifier = TaskToTag.tag
+JOIN ProjectInfo ON ProjectInfo.task = Task.containingProjectInfo
+WHERE Task.dateCompleted IS NULL
+  AND Task.blockedByFutureStartDate IS 0
+  AND ProjectInfo.status NOT IN ('done',
+                                 'dropped',
+                                 'inactive')
+  AND Task.parent = '{0}'
+"""
 
 
 class Omnifocus:
     log = logging.getLogger(__name__)
 
     def __init__(self):
-        of_location = "{0}{1}".format(os.path.expanduser("~"), DB_LOCATION)
-        if not os.path.isfile(of_location):
-            of_location = re.sub(".OmniFocus2", ".OmniFocus2.MacAppStore", of_location)
-        self.log.debug("Using Omnifocus location {0}".format(of_location))
+        self.of_location = "{0}{1}".format(os.path.expanduser("~"), DB_LOCATION)
+        if not os.path.isfile(self.of_location):
+            self.of_location = re.sub(".OmniFocus3", ".OmniFocus3.MacAppStore", self.of_location)
+        self.log.debug("Using Omnifocus location {0}".format(self.of_location))
 
-        self.engine = create_engine('sqlite:///' + of_location, echo=False)
-        self.session = sessionmaker()(bind=self.engine)
+        self.conn = sqlite3.connect(self.of_location)
+        self.conn.row_factory = sqlite3.Row
 
     def flagged_tasks(self):
         self.log.debug("Looking for flagged tasks")
 
         tasks = dict()
 
-        results = self.session.query(Task).join(ProjectInfo). \
-            filter(or_(Task.flagged == 1), Task.effectiveFlagged == 1). \
-            filter(Task.dateCompleted.is_(None)). \
-            filter(Task.blockedByFutureStartDate.is_(0)). \
-            filter(ProjectInfo.status.notin_(['done', 'dropped', 'inactive'])). \
-            order_by(Task.name)
+        cursor = self.conn.cursor()
+        cursor.execute(FLAGGED_TASKS_SQL)
+        results = cursor.fetchall()
+        self.log.debug("Found {0} results".format(len(results)))
+        cursor.close()
 
-        for task in results:
-            name = task.task_name()
-            blocked = task.blocked
-            child_count = task.childrenCount
-            has_next_task = task.containsNextTask
-            is_wf_task = name.startswith('WF')
+        for row in results:
+            task = Omnifocus.task_from_row(row)
+            child_count = task['child_count']
+            name = task['name']
+            held = task['is_wf_task']
+            _id = task['identifier']
 
-            if task.is_deferred():
+            if self.is_deferred(task['start_date']):
                 self.log.debug("Ignoring deferred task '{0}'".format(name))
-                # print("Ignoring deferred task '{0}'".format(name))
                 continue
-            if (child_count and not has_next_task) and (child_count and not is_wf_task):
-                self.log.debug("Ignoring task '{0}' with {1} sub-tasks but doesn't have next task {2}".format(
-                    name, child_count, has_next_task))
-                # print("Ignoring task '{0}' with {1} sub-tasks but doesn't have next task {2}".format(
-                #     name, child_count, has_next_task))
+            if (child_count and not task['has_next_task']) and (child_count and not held):
+                self.log.debug("Ignoring task '{0}' with {1} sub-tasks but doesn't have next task".format(name,
+                                                                                                          child_count))
                 continue
-            if blocked and not child_count and not is_wf_task:
-                self.log.debug("Ignoring blocked task '{0}' with {1} sub-tasks and isn't a WF task".format(
-                    name, child_count, is_wf_task))
-                # print("Ignoring blocked task '{0}' with {1} sub-tasks and isn't a WF task".format(
-                #     name, child_count, is_wf_task))
+            if task['blocked'] and not child_count and not held:
+                self.log.debug("Ignoring blocked task '{0}' with {1} sub-tasks and isn't a WF task".format(name,
+                                                                                                           child_count))
                 continue
 
-            # print "{0} {1} {2} {3}".format(task.task_name(), task.childrenCount, task.blocked, task.is_deferred())
-            identifier = task.persistentIdentifier
-            tasks[identifier] = Omnifocus.init_task(task)
+            tasks[_id] = self.init_task(task)
 
         self.log.debug("Found {0} flagged tasks".format(len(tasks)))
         return tasks
+
+    @staticmethod
+    def task_from_row(row):
+        name = row['name']
+        blocked = row['blocked']
+        child_count = row['childrenCount']
+        has_next_task = row['containsNextTask']
+        identifier = row['persistentIdentifier']
+        tag = row['tag']
+        note = row['plainTextNote']
+        completed_date = row['dateCompleted']
+        is_wf_task = name.startswith('WF')
+        start_date = row['dateToStart']
+
+        return dict(name=name, blocked=blocked, child_count=child_count, has_next_task=has_next_task,
+                    start_date=start_date, identifier=identifier, tag=tag, note=note,
+                    completed_date=completed_date, is_wf_task=is_wf_task)
 
     def close_tasks(self, identifiers):
         tasks_closed = []
@@ -139,119 +207,68 @@ class Omnifocus:
             return rep_type
         except ValueError as e:
             self.log.debug(u"Ignoring {0}{1} ({2}), not found in Omnifocus".format(URI_PREFIX, _id, name))
+            self.log.debug(e)
             return 0
 
     def get_task_details(self, _id):
-        result = self.session.query(Task).filter(Task.persistentIdentifier.is_(_id)).first()
+        query = "SELECT * FROM Task WHERE persistentIdentifier = '{0}'".format(_id)
+        cursor = self.conn.cursor()
+        cursor.execute(query)
+        result = cursor.fetchone()
 
         if result is None:
             raise ValueError("{0} not found in Omnifocus".format(_id))
 
-        name = result.name
-        rep_rule = result.repetitionMethodString
+        name = result["name"]
+        rep_rule = result["repetitionMethodString"]
         return name, rep_rule
 
-
-    @staticmethod
-    def init_task(task):
+    def init_task(self, task):
         completed = None
 
-        if task.dateCompleted:
+        if task['completed_date']:
             completed = True
 
-        task_dict = dict(identifier=task.persistentIdentifier, name=task.task_name(),
-                         type=task.context_name(), note=task.note, completed=completed,
-                         uri="{0}{1}".format(URI_PREFIX, task.persistentIdentifier))
+        _id = task['identifier']
+        child_count = task['child_count']
 
-        if task.children:
+        task_dict = dict(identifier=_id, name=task['name'], type=task['tag'], note=task['note'], completed=completed,
+                         uri="{0}{1}".format(URI_PREFIX, _id))
+
+        if child_count:
             child_tasks = []
-            for child_task in task.children:
-                child_tasks.append(Omnifocus.init_task(child_task))
+            cursor = self.conn.cursor()
+            cursor.execute(CHILD_TASKS_SQL.format(_id))
+            results = cursor.fetchall()
+            print "Found {0} child tasks".format(len(results))
+            cursor.close()
+            for child in results:
+                child_tasks.append(self.init_task(Omnifocus.task_from_row(child)))
 
             task_dict['children'] = child_tasks
 
         logging.debug("Created task {0}".format(task_dict))
-
         return task_dict
 
     @staticmethod
     def task_completed(identifier):
         return applescript.AppleScript(IS_TASK_COMPLETE).call('task_completed', identifier)
 
-
-
-class ProjectInfo(Base):
-    __tablename__ = DB_PREFIX + 'ProjectInfo'
-
-    pk = Column(Text, primary_key=True)
-    task = Column(Text)
-    status = Column(Text)
-
-
-class Context(Base):
-    __tablename__ = DB_PREFIX + 'Context'
-
-    persistentIdentifier = Column(Text, primary_key=True)
-    name = Column(Text)
-    tasks = relationship('Task')
-
-
-class Task(Base):
-    __tablename__ = DB_PREFIX + 'Task'
-
-    persistentIdentifier = Column(Text, primary_key=True)
-    blocked = Column(Integer)
-    blockedByFutureStartDate = Column(Integer)
-    context = relationship('Context', backref=backref('Task'))
-    flagged = Column(Integer)
-    effectiveFlagged = Column(Integer)
-
-    dateCompleted = Column(Integer)
-    dateDue = Column(Integer)
-    dateToStart = Column(Integer)
-    effectiveDateToStart = Column(Integer)
-    childrenCount = Column(Integer)
-
-    note = Column('plainTextNote', Text)
-
-    name = Column(Text)
-    context_id = Column('context', Text, ForeignKey('Context.persistentIdentifier'))
-    project_info = Column('containingProjectInfo', Text, ForeignKey('ProjectInfo.task'))
-    parent_id = Column('parent', Text, ForeignKey('Task.persistentIdentifier'))
-
-    children = relationship('Task', primaryjoin='Task.persistentIdentifier == Task.parent_id')
-
-    repetitionMethodString = Column(Text)
-
-    containsNextTask = Column(Integer)
-
-    def __repr__(self):
-        return self.name
-
-    def deferred_date(self):
+    @staticmethod
+    def deferred_date(date_to_start):
         date = None
-        if self.dateToStart is not None:
-            date = datetime.fromtimestamp(self.dateToStart + OFFSET)
+        if date_to_start is not None:
+            date = datetime.fromtimestamp(date_to_start + OFFSET)
         return date
 
-    def is_complete(self):
-        return self.dateCompleted is not None
-
-    def is_deferred(self):
+    @staticmethod
+    def is_deferred(date_to_start):
         deferred = False
-        if self.dateToStart is not None:
-            if self.deferred_date() > datetime.now():
-                deferred = True
-
+        if date_to_start is not None and Omnifocus.deferred_date(date_to_start) > datetime.now():
+            deferred = True
         return deferred
-
-    def task_name(self):
-        return self.name#.encode(ENCODING)
-
-    def context_name(self):
-        return self.context.name if self.context else 'None'
 
 
 if __name__ == '__main__':
     omnifocus = Omnifocus()
-    print omnifocus.flagged_tasks()
+    print omnifocus.get_task_details("k83Obd03UWV")

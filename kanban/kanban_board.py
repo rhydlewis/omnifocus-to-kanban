@@ -66,8 +66,8 @@ class KanbanFlow:
         return cards_added
 
     def remove_comments_from_repeating_tasks(self, identifiers):
-        for id in identifiers:
-            self.kb.delete_external_id_comment(id['id'])
+        for _id in identifiers:
+            self.kb.delete_external_id_comment(_id['id'])
 
 
 class Trello:
@@ -167,6 +167,7 @@ def load_config(path):
     config = yaml.safe_load(f)
     f.close()
     return config
+
 
 if __name__ == '__main__':
     board = Trello()
