@@ -10,11 +10,12 @@ import sqlite3
 
 # DB_LOCATION = ("/Library/Containers/com.omnigroup.OmniFocus2/"
 #                "Data/Library/Caches/com.omnigroup.OmniFocus2/OmniFocusDatabase2")
-DB_LOCATION = "/Library/Containers/com.omnigroup.OmniFocus3/Data/Library/Application Support/" \
-              "OmniFocus/OmniFocus Caches/OmniFocusDatabase"
+#DB_LOCATION = "/Library/Containers/com.omnigroup.OmniFocus3/Data/Library/Application Support/" \
+#              "OmniFocus/OmniFocus Caches/OmniFocusDatabase"
+DB_LOCATION = "/Library/Group Containers/34YW5XSRB7.com.omnigroup.OmniFocus/com.omnigroup.OmniFocus3/com.omnigroup.OmniFocusModel/OmniFocusDatabase.db"
 DB_PREFIX = ''
 URI_PREFIX = 'omnifocus:///task/'
-OFFSET = 978307200
+DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%S.%fZ'
 ENCODING = 'utf-8'
 
 IS_TASK_COMPLETE = """
@@ -128,17 +129,18 @@ class Omnifocus:
             name = task['name']
             held = task['is_wf_task']
             _id = task['identifier']
+            start_date = task['start_date'] # timestamp in OmniFocus 3.6
 
-            if self.is_deferred(task['start_date']):
-                self.log.debug("Ignoring deferred task '{0}'".format(name))
+            if self.is_deferred(start_date):
+                self.log.debug(u"Ignoring deferred task '{0}'".format(name))
                 continue
             if (child_count and not task['has_next_task']) and (child_count and not held):
-                self.log.debug("Ignoring task '{0}' with {1} sub-tasks but doesn't have next task".format(name,
+                self.log.debug(u"Ignoring task '{0}' with {1} sub-tasks but doesn't have next task".format(name,
                                                                                                           child_count))
                 continue
             if task['blocked'] and not child_count and not held:
-                self.log.debug("Ignoring blocked task '{0}' with {1} sub-tasks and isn't a WF task".format(name,
-                                                                                                           child_count))
+                self.log.debug(u"Ignoring blocked task '{0}' with {1} sub-tasks and isn't a WF task".format(name,
+                                                                                                            child_count))
                 continue
 
             tasks[_id] = self.init_task(task)
@@ -258,13 +260,16 @@ class Omnifocus:
     def deferred_date(date_to_start):
         date = None
         if date_to_start is not None:
-            date = datetime.fromtimestamp(date_to_start + OFFSET)
+            logging.debug("Determining task's deferred date: {0}".format(date_to_start))
+            date = datetime.strptime(date_to_start, DATETIME_FORMAT)
         return date
 
     @staticmethod
     def is_deferred(date_to_start):
+        now = datetime.now()
+        logging.debug("Checking if task is deferred based on date_to_start {0} > {1}".format(date_to_start, now))
         deferred = False
-        if date_to_start is not None and Omnifocus.deferred_date(date_to_start) > datetime.now():
+        if date_to_start is not None and Omnifocus.deferred_date(date_to_start) > now:
             deferred = True
         return deferred
 

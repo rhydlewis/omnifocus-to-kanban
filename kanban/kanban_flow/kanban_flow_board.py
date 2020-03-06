@@ -76,7 +76,7 @@ class KanbanFlowBoard:
                 tasks_added += self.update_task(identifier, name, note, subtasks)
             else:
                 tasks_added += self.create_task(name, self.default_drop_column, identifier,
-                                                "061270101e2e11e79bf007ab0042387c", note, _type, subtasks)
+                                                "TMBzlTCHDCbu", note, _type, subtasks)
 
         return tasks_added
 
@@ -99,7 +99,9 @@ class KanbanFlowBoard:
         comment = COMMENT_PREFIX + identifier
 
         self.log.debug(u"Adding task: {0}".format(properties))
-        task_id = self.request("https://kanbanflow.com/api/v1/tasks", properties).json()["taskId"]
+        json = self.request("https://kanbanflow.com/api/v1/tasks", properties).json()
+        self.log.debug(u"{0}".format(json))
+        task_id = json["taskId"]
         updates_made += 1
 
         self.request(TASKS_URI + "{0}/comments".format(task_id), {"text": comment})
