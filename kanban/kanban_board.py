@@ -6,6 +6,7 @@ import re
 from trello import TrelloClient
 from leankit import LeankitKanban
 from kanban_flow import KanbanFlowBoard
+from zenkit import ZenKitBoard
 
 
 class LeanKit:
@@ -38,6 +39,32 @@ class LeanKit:
 
     def add_cards(self, cards):
         return self.board.add_cards(cards)
+
+
+class ZenKit:
+    kb = None
+    log = logging.getLogger(__name__)
+
+    def __init__(self):
+        self.config = load_config("config/zenkit-config.yaml")
+        token = self.config['token']
+        self.kb = ZenKitBoard(token)
+
+    def find_completed_card_ids(self):
+        return self.kb.completed_tasks
+
+    def card_exists(self, identifier):
+        return False
+
+    def add_cards(self, cards):
+        cards_added = self.kb.create_tasks(cards)
+        self.log.debug("Made {0} API requests in this session".format(self.kb.api_requests))
+        return cards_added
+
+    def remove_comments_from_repeating_tasks(self, identifiers):
+        # for _id in identifiers:
+        #     self.kb.delete_external_id_comment(_id['id'])
+        return
 
 
 class KanbanFlow:

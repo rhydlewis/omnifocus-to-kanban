@@ -16,6 +16,7 @@ DB_LOCATION = "/Library/Group Containers/34YW5XSRB7.com.omnigroup.OmniFocus/com.
 DB_PREFIX = ''
 URI_PREFIX = 'omnifocus:///task/'
 DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%S.%fZ'
+DATETIME_FORMAT_WITHOUT_TIMEZONE = '%Y-%m-%dT%H:%M:%S.%f'
 ENCODING = 'utf-8'
 
 IS_TASK_COMPLETE = """
@@ -130,6 +131,8 @@ class Omnifocus:
             held = task['is_wf_task']
             _id = task['identifier']
             start_date = task['start_date'] # timestamp in OmniFocus 3.6
+
+            self.log.debug(u"Processing task '{0}'".format(name))
 
             if self.is_deferred(start_date):
                 self.log.debug(u"Ignoring deferred task '{0}'".format(name))
@@ -261,7 +264,10 @@ class Omnifocus:
         date = None
         if date_to_start is not None:
             logging.debug("Determining task's deferred date: {0}".format(date_to_start))
-            date = datetime.strptime(date_to_start, DATETIME_FORMAT)
+            try:
+                date = datetime.strptime(date_to_start, DATETIME_FORMAT)
+            except ValueError:
+                date = datetime.strptime(date_to_start, DATETIME_FORMAT_WITHOUT_TIMEZONE)
         return date
 
     @staticmethod

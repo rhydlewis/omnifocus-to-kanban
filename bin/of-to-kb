@@ -3,7 +3,7 @@
 """Omnifocus to Kanban
 
 Usage:
-  of-to-kb.py (--trello | --leankit | --kanbanflow) [--eval]
+  of-to-kb.py (--trello | --leankit | --kanbanflow | --zenkit) [--eval]
   of-to-kb.py -h | --help
   of-to-kb.py --version
 
@@ -19,7 +19,7 @@ from docopt import docopt
 
 sys.path.insert(0, '.')
 from omnifocus import Omnifocus
-from kanban import LeanKit, Trello, KanbanFlow
+from kanban import LeanKit, Trello, KanbanFlow, ZenKit
 
 
 def main():
@@ -36,8 +36,11 @@ def main():
     elif opts['--kanbanflow']:
         logging.debug("Connecting to KanbanFlow board")
         board = KanbanFlow()
+    elif opts['--zenkit']:
+        logging.debug("Connecting to ZenKit board")
+        board = ZenKit()
     else:
-        raise ValueError("Couldn't find a choice between KanbanFlow, LeanKit or Trello...")
+        raise ValueError("Couldn't find a choice between KanbanFlow, ZenKit, LeanKit or Trello...")
 
     external_ids = board.find_completed_card_ids()
     

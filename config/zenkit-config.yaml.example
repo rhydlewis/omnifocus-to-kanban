@@ -1,0 +1,6 @@
+token: TOKEN
+workspace_id: ID
+collections_id: ID
+default_drop_lane: TBC
+completed_lanes:
+- TBC
