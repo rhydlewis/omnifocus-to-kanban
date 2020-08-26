@@ -260,6 +260,8 @@ class Omnifocus:
     def deferred_date(date_to_start):
         date = None
         if date_to_start is not None:
+            if date_to_start[-1:] != "Z":
+                date_to_start = date_to_start + "Z"
             logging.debug("Determining task's deferred date: {0}".format(date_to_start))
             date = datetime.strptime(date_to_start, DATETIME_FORMAT)
         return date
