@@ -1,7 +1,7 @@
 import logging
 import yaml
 import os
-from .bin import KanbanFlowBoard
+from kanban_flow_board import KanbanFlowBoard
 
 
 class KanbanFlow:
@@ -9,7 +9,7 @@ class KanbanFlow:
     log = logging.getLogger(__name__)
 
     def __init__(self):
-        self.config = load_config("config/kanbanflow-config.yaml")
+        self.config = load_config("./config/kanbanflow-config.yaml")
 
         token = self.config['token']
         default_drop_lane = self.config['default_drop_lane']
