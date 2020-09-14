@@ -1,0 +1,9 @@
+token: <your token>
+default_drop_lane: <default drop lane ID>
+completed_lanes:
+- <list of 'done' lane IDs
+card_types:
+  <context>:
+    color: orange
+  <context>:
+    color: blue
