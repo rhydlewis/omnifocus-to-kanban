@@ -4,15 +4,12 @@ import applescript
 import logging
 import os
 import re
+import sqlite3
 from datetime import datetime
 
-import sqlite3
 
-# DB_LOCATION = ("/Library/Containers/com.omnigroup.OmniFocus2/"
-#                "Data/Library/Caches/com.omnigroup.OmniFocus2/OmniFocusDatabase2")
-#DB_LOCATION = "/Library/Containers/com.omnigroup.OmniFocus3/Data/Library/Application Support/" \
-#              "OmniFocus/OmniFocus Caches/OmniFocusDatabase"
-DB_LOCATION = "/Library/Group Containers/34YW5XSRB7.com.omnigroup.OmniFocus/com.omnigroup.OmniFocus3/com.omnigroup.OmniFocusModel/OmniFocusDatabase.db"
+DB_LOCATION = "/Library/Group Containers/34YW5XSRB7.com.omnigroup.OmniFocus/com.omnigroup.OmniFocus3/" \
+              "com.omnigroup.OmniFocusModel/OmniFocusDatabase.db"
 DB_PREFIX = ''
 URI_PREFIX = 'omnifocus:///task/'
 DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%S.%fZ'
@@ -129,18 +126,18 @@ class Omnifocus:
             name = task['name']
             held = task['is_wf_task']
             _id = task['identifier']
-            start_date = task['start_date'] # timestamp in OmniFocus 3.6
+            start_date = task['start_date']  # timestamp in OmniFocus 3.6
 
             if self.is_deferred(start_date):
                 self.log.debug(u"Ignoring deferred task '{0}'".format(name))
                 continue
             if (child_count and not task['has_next_task']) and (child_count and not held):
                 self.log.debug(u"Ignoring task '{0}' with {1} sub-tasks but doesn't have next task".format(name,
-                                                                                                          child_count))
+                                                                                                           child_count))
                 continue
             if task['blocked'] and not child_count and not held:
-                self.log.debug(u"Ignoring blocked task '{0}' with {1} sub-tasks and isn't a WF task".format(name,
-                                                                                                            child_count))
+                self.log.debug(u"Ignoring blocked task '{0}' ({1} sub-tasks) that isn't a WF task".format(name,
+                                                                                                          child_count))
                 continue
 
             tasks[_id] = self.init_task(task)
@@ -242,7 +239,7 @@ class Omnifocus:
             cursor = self.conn.cursor()
             cursor.execute(CHILD_TASKS_SQL.format(_id))
             results = cursor.fetchall()
-            print "Found {0} child tasks".format(len(results))
+            print("Found {0} child tasks".format(len(results)))
             cursor.close()
             for child in results:
                 child_tasks.append(self.init_task(Omnifocus.task_from_row(child)))
@@ -278,4 +275,4 @@ class Omnifocus:
 
 if __name__ == '__main__':
     omnifocus = Omnifocus()
-    print omnifocus.get_task_details("k83Obd03UWV")
+    print(omnifocus.get_task_details("k83Obd03UWV"))

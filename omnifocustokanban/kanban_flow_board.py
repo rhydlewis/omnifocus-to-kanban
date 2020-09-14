@@ -17,7 +17,8 @@ class KanbanFlowBoard:
     api_requests = 0
 
     def __init__(self, token, default_drop_column, types, completed_columns):
-        self.auth = {'Authorization': "Basic " + base64.b64encode("apiToken:{0}".format(token))}
+        auth = base64.b64encode("apiToken:{0}".format(token).encode()).decode("utf-8")
+        self.auth = {'Authorization': "Basic {0}".format(auth)}
         self.board_details = self.request("https://kanbanflow.com/api/v1/board").json()
         self.default_drop_column = default_drop_column
         self.types = types
@@ -51,7 +52,7 @@ class KanbanFlowBoard:
         comments = self.request(TASKS_URI + "{0}/comments".format(_id))
         comment_json = comments.json()
         if comment_json:
-            comment = (item for item in comment_json if COMMENT_PREFIX in item["text"]).next()
+            comment = next((item for item in comment_json if COMMENT_PREFIX in item["text"]))
             if comment:
                 return comment
         return None
@@ -165,7 +166,7 @@ class KanbanFlowBoard:
 
     def get_column_name(self, _id):
         columns = self.board_details["columns"]
-        column = (item for item in columns if item["uniqueId"] == _id).next()
+        column = next(item for item in columns if item["uniqueId"] == _id)
         return column
 
     def clear_board(self):

@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 
 """Omnifocus to Kanban
 
@@ -10,16 +10,12 @@ Usage:
 """
 import sys
 import os
-from timeit import default_timer as timer
-
 import logging
 import logging.config
-
+from timeit import default_timer as timer
 from docopt import docopt
-
-sys.path.insert(0, '.')
+from kanban_board import KanbanFlow
 from omnifocus import Omnifocus
-from kanban import LeanKit, Trello, KanbanFlow
 
 
 def main():
@@ -27,17 +23,11 @@ def main():
 
     opts = docopt(__doc__)
 
-    if opts['--trello']:
-        logging.debug("Connecting to Trello board")
-        board = Trello()
-    elif opts['--leankit']:
-        logging.debug("Connecting to Leankit board")
-        board = LeanKit()
-    elif opts['--kanbanflow']:
+    if opts['--kanbanflow']:
         logging.debug("Connecting to KanbanFlow board")
         board = KanbanFlow()
     else:
-        raise ValueError("Couldn't find a choice between KanbanFlow, LeanKit or Trello...")
+        raise ValueError("Expected --kanbanflow")
 
     external_ids = board.find_completed_card_ids()
     
@@ -58,11 +48,11 @@ def main():
         cards_to_add = omnifocus.flagged_tasks().values()
         result = result + "\n" + "To add: {0}".format(cards_to_add)
 
-    print result
+    print(result)
 
 
 if __name__ == '__main__':
-    logging.config.fileConfig('config/log.conf')
+    logging.config.fileConfig('./config/log.conf')
     logging.debug("sys.path: %s", sys.path)
     logging.debug("sys.executable: %s", sys.executable)
     logging.debug("os.getcwd(): %s", os.getcwd())
@@ -70,10 +60,10 @@ if __name__ == '__main__':
     try:
         main()
     except ValueError as e:
-        print "Something's not right\n", e
+        print("Something's not right\n", e)
         import traceback
         traceback.print_exc()
         sys.exit(-1)
     except IOError as e:
-        print "Failed to connect to kanban board"
+        print("Failed to connect to kanban board", e)
         sys.exit(-1)

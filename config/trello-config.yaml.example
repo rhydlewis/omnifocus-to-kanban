@@ -1,6 +1,0 @@
-app_key: your trello key
-token: your trello token if you use a private board
-board_id: your PK board id
-default_list: the ID of the list in which you want the tool to add new cards into
-completed_lists:
-	- ID's of lists in which completed cards are found

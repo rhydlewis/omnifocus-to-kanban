@@ -7,3 +7,5 @@ log/omnifocus-to-kanban.log
 sync.sh
 log/
 venv/
+.python-version
+pyvenv.cfg
