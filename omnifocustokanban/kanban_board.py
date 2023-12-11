@@ -26,7 +26,8 @@ class KanbanFlow:
 
     def add_cards(self, cards):
         cards_added = self.kb.create_tasks(cards)
-        self.log.debug("Made {0} API requests in this session".format(self.kb.api_requests))
+        self.log.debug("Made {0} API requests in this session ({1} total bytes)".format(self.kb.api_requests,
+                                                                                        self.kb.bytes_transferred))
         return cards_added
 
     def remove_comments_from_repeating_tasks(self, identifiers):

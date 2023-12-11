@@ -15,17 +15,19 @@ class KanbanFlowBoard:
     all_tasks = {}
     completed_tasks = []
     api_requests = 0
+    bytes_transferred = 0
 
     def __init__(self, token, default_drop_column, types, completed_columns):
         auth = base64.b64encode("apiToken:{0}".format(token).encode()).decode("utf-8")
         self.auth = {'Authorization': "Basic {0}".format(auth)}
-        self.board_details = self.request("https://kanbanflow.com/api/v1/board").json()
+        self.board_details = self.request("https://kanbanflow.com/api/v1/board")
+        self.default_swimlane = self.board_details['swimlanes'][0]['uniqueId']
         self.default_drop_column = default_drop_column
         self.types = types
         self.classify_board(completed_columns)
 
     def classify_board(self, completed_columns):
-        columns = self.request(TASKS_URI).json()
+        columns = self.request(TASKS_URI)
 
         for column in columns:
             column_id = column["columnId"]
@@ -33,8 +35,8 @@ class KanbanFlowBoard:
             tasks = column["tasks"]
             is_completed_column = column_id in completed_columns
 
-            self.log.debug(u"Found {0} tasks in {1} (completed column? {2})".format(len(tasks), column_name,
-                                                                                    is_completed_column))
+            # self.log.debug(u"Found {0} tasks in {1} (completed column? {2})".format(len(tasks), column_name,
+            #                                                                         is_completed_column))
 
             for task in tasks:
                 _id = task["_id"]
@@ -49,12 +51,14 @@ class KanbanFlowBoard:
 
     def get_comment_containing_id(self, _id):
         # self.log.debug("Looking for comments in task {0}".format(_id))
-        comments = self.request(TASKS_URI + "{0}/comments".format(_id))
-        comment_json = comments.json()
-        if comment_json:
-            comment = next((item for item in comment_json if COMMENT_PREFIX in item["text"]))
-            if comment:
-                return comment
+        try:
+            comment_json = self.request(TASKS_URI + "{0}/comments".format(_id))
+            if comment_json:
+                comment = next((item for item in comment_json if COMMENT_PREFIX in item["text"]))
+                if comment:
+                    return comment
+        except:
+            self.log.warning("Failed to get comments for {0}".format(_id))
         return None
 
     def create_tasks(self, tasks):
@@ -76,14 +80,18 @@ class KanbanFlowBoard:
             if identifier in external_ids:
                 tasks_added += self.update_task(identifier, name, note, subtasks)
             else:
-                tasks_added += self.create_task(name, self.default_drop_column, identifier,
-                                                "TMBzlTCHDCbu", note, _type, subtasks)
+                tasks_added += self.create_task(name, self.default_drop_column, identifier, None, note, _type,
+                                                subtasks)
 
         return tasks_added
 
     def create_task(self, name, column, identifier, swimlane, description='', _type=None, subtasks=None):
         if 'None' == _type:
             raise ValueError("Task '{0}' can't have context value of 'None'".format(name))
+
+        if description is None:
+            self.log.error(u"Task description is None? {0}".format(name))
+            description=""
 
         color = None
         if _type:
@@ -95,17 +103,27 @@ class KanbanFlowBoard:
 
         updates_made = 0
 
-        properties = {"name": name, "columnId": column, "description": description, "color": color,
-                      "swimlaneId": swimlane}
+        if swimlane is None:
+            swimlane = self.default_swimlane
+
+        if "Look" in name:
+            print("here")
+
+        properties = {"name": name, "columnId": column, "description": description,
+                      "color": color, "swimlaneId": swimlane}
+        # properties = {"name": name, "columnId": column, "description": description,
+        #               "color": color}
         comment = COMMENT_PREFIX + identifier
 
-        self.log.debug(u"Adding task: {0}".format(properties))
-        json = self.request("https://kanbanflow.com/api/v1/tasks", properties).json()
+        json = self.request("https://kanbanflow.com/api/v1/tasks", properties)
         self.log.debug(u"{0}".format(json))
-        task_id = json["taskId"]
-        updates_made += 1
-
-        self.request(TASKS_URI + "{0}/comments".format(task_id), {"text": comment})
+        if json is not None:
+            self.log.debug(u"Adding task: {0}".format(properties))
+            task_id = json["taskId"]
+            updates_made += 1
+            self.request(TASKS_URI + "{0}/comments".format(task_id), {"text": comment})
+        else:
+            self.log.error(u"Task add failed: {0}".format(properties))
 
         if subtasks:
             sorted_subtasks = sorted(subtasks, key=itemgetter('name'))
@@ -129,13 +147,16 @@ class KanbanFlowBoard:
     def create_subtask(self, task_id, subtask):
         name = subtask['name']
         completed = subtask['completed']
-        self.request(TASKS_URI + "{0}/subtasks".format(task_id), {"name": name, "finished": completed})
+        if not completed:
+            completed = False
+        uri = TASKS_URI + "{0}/subtasks".format(task_id)
+        body = {"name": name, "finished": completed}
+        json = self.request(uri, body)
 
     def update_task(self, identifier, name, note, subtasks=None):
         task = self.all_tasks[identifier]
         task_id = task['_id']
         existing_subtask_names = self.get_subtasks(task_id)
-        self.log.debug(u"existing sub-tasks in {0} {1}: {2}".format(identifier, name, existing_subtask_names))
         properties = {}
         updates_made = 0
 
@@ -155,6 +176,7 @@ class KanbanFlowBoard:
 
         if subtasks:
             sorted_subtasks = sorted(subtasks, key=itemgetter('name'))
+            self.log.debug(u"Existing sub-tasks in {0}, {1}: {2}".format(identifier, name, sorted_subtasks))
             for subtask in sorted_subtasks:
                 subtask_name = subtask['name']
                 if subtask_name not in existing_subtask_names:
@@ -172,7 +194,7 @@ class KanbanFlowBoard:
     def clear_board(self):
         response = requests.get(TASKS_URI, headers=self.auth)
 
-        for column in response.json():
+        for column in response:
             tasks = column["tasks"]
             for task in tasks:
                 _id = task["_id"]
@@ -180,20 +202,40 @@ class KanbanFlowBoard:
 
     def get_subtasks(self, task_id):
         names = []
-        sub_tasks = self.request(TASKS_URI + "{0}/subtasks".format(task_id)).json()
+        sub_tasks = self.request(TASKS_URI + "{0}/subtasks".format(task_id))
         for sub_task in sub_tasks:
             names.append(sub_task['name'])
         return names
 
     def request(self, url, body=None):
-        if body:
-            response = requests.post(url, headers=self.auth, json=body)
-        else:
-            response = requests.get(url, headers=self.auth)
+        try:
+            if body:
+                # self.log.debug("POST {0}".format(url))
+                headers = self.auth.copy()
+                headers['Accept-Encoding'] = "gzip"
+                response = requests.post(url, headers=headers, json=body)
+            else:
+                # self.log.debug("GET {0}".format(url))
+                response = requests.get(url, headers=self.auth)
 
-        self.api_requests += 1
+            self.api_requests += 1
+            self.bytes_transferred += len(response.content)
 
-        return response
+            code = response.status_code
+            # self.log.debug("RESPONSE {0}".format(code))
+
+            if code == 200:
+                json = response.json()
+                return json
+        except (
+                requests.ConnectionError,
+                requests.exceptions.ReadTimeout,
+                requests.exceptions.Timeout,
+                requests.exceptions.ConnectTimeout,
+        ) as e:
+            print(e)
+
+        return None
 
 
 def compare_description(description, note):

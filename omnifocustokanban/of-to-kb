@@ -35,7 +35,7 @@ def main():
 
     if not opts['--eval']:
         tasks_closed, repeating_tasks_closed = omnifocus.close_tasks(external_ids)
-        # DEBUG tasks_closed, repeating_tasks_closed = [], []
+        # tasks_closed, repeating_tasks_closed = [], []
         cards_to_add = omnifocus.flagged_tasks().values()
         board.remove_comments_from_repeating_tasks(repeating_tasks_closed)
         cards_added = board.add_cards(cards_to_add)
@@ -66,4 +66,12 @@ if __name__ == '__main__':
         sys.exit(-1)
     except IOError as e:
         print("Failed to connect to kanban board", e)
+        import traceback
+        traceback.print_exc()
         sys.exit(-1)
+    except OSError as e:
+        print("Unknown failure", e)
+        import traceback
+        traceback.print_exc()
+        sys.exit(-1)
+

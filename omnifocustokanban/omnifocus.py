@@ -8,7 +8,10 @@ import sqlite3
 from datetime import datetime
 
 
-DB_LOCATION = "/Library/Group Containers/34YW5XSRB7.com.omnigroup.OmniFocus/com.omnigroup.OmniFocus3/" \
+# DB_LOCATION = "/Library/Group Containers/34YW5XSRB7.com.omnigroup.OmniFocus/com.omnigroup.OmniFocus3/" \
+#               "com.omnigroup.OmniFocusModel/OmniFocusDatabase.db"
+
+DB_LOCATION = "/Library/Group Containers/34YW5XSRB7.com.omnigroup.OmniFocus/com.omnigroup.OmniFocus4/" \
               "com.omnigroup.OmniFocusModel/OmniFocusDatabase.db"
 DB_PREFIX = ''
 URI_PREFIX = 'omnifocus:///task/'
