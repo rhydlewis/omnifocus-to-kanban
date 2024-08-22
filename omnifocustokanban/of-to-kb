@@ -24,6 +24,7 @@ CONFIG_PATH = './config/log.conf'
 KANBANFLOW_OPTION = '--kanbanflow'
 PLANE_OPTION = '--plane'
 
+
 def setup_logging() -> None:
     """Set up logging configuration."""
     logging.config.fileConfig(CONFIG_PATH)
@@ -46,6 +47,7 @@ def connect_to_board(opts: Dict[str, Any]) -> Union[KanbanFlow, PlaneKanbanBoard
         return PlaneKanbanBoard(api_key, workspace_id, project_id)
     else:
         raise ValueError(f"Expected {KANBANFLOW_OPTION} or {PLANE_OPTION}")
+
 
 def process_tasks(board: Union[KanbanFlow, PlaneKanbanBoard], omnifocus: Omnifocus, external_ids: List[str]) -> str:
     """Process tasks and return a result string."""
@@ -90,6 +92,7 @@ def main() -> None:
     except Exception as e:
         logging.error(f"Unexpected error: {e}")
         sys.exit(3)
+
 
 if __name__ == '__main__':
     setup_logging()
