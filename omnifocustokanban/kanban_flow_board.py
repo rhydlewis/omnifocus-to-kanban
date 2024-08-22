@@ -16,12 +16,12 @@ class KanbanFlowBoard:
         self.auth = {'Authorization': f"Basic {base64.b64encode(f'apiToken:{token}'.encode()).decode('utf-8')}"}
         self.default_drop_column = default_drop_column
         self.types = types
+        self.api_requests = 0
+        self.bytes_transferred = 0
         self.board_details = self.request(BOARD_URI)
         self.default_swimlane = self.board_details['swimlanes'][0]['uniqueId']
         self.all_tasks: Dict[str, Any] = {}
         self.completed_tasks: List[Dict[str, str]] = []
-        self.api_requests = 0
-        self.bytes_transferred = 0
         self.classify_board(completed_columns)
 
     def classify_board(self, completed_columns: List[str]) -> None:
