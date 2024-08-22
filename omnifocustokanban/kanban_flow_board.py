@@ -2,6 +2,8 @@ import requests
 import logging
 import base64
 from operator import itemgetter
+from typing import List
+from omnifocus import Task
 
 COMMENT_PREFIX = "external_id="
 TASKS_URI = "https://kanbanflow.com/api/v1/tasks/"
@@ -61,21 +63,18 @@ class KanbanFlowBoard:
             self.log.warning("Failed to get comments for {0}".format(_id))
         return None
 
-    def create_tasks(self, tasks):
+    def create_tasks(self, tasks: List[Task]):
         self.log.debug(u"Checking which of {0} tasks to add".format(len(tasks)))
 
         tasks_added = 0
         external_ids = self.all_tasks.keys()
 
         for task in tasks:
-            name = task['name']
-            identifier = task['identifier']
-            _type = task['type']
-            note = task['note']
-            subtasks = None
-
-            if 'children' in task:
-                subtasks = task['children']
+            name = task.name
+            identifier = task.identifier
+            _type = task.type
+            note = task.note
+            subtasks = task.children
 
             if identifier in external_ids:
                 tasks_added += self.update_task(identifier, name, note, subtasks)
@@ -144,11 +143,9 @@ class KanbanFlowBoard:
             comment_id = comment["_id"]
             requests.delete(TASKS_URI + "{0}/comments/{1}".format(task_id, comment_id), headers=self.auth)
 
-    def create_subtask(self, task_id, subtask):
-        name = subtask['name']
-        completed = subtask['completed']
-        if not completed:
-            completed = False
+    def create_subtask(self, task_id: str, subtask: Task):
+        name = subtask.name
+        completed = subtask.completed if subtask.completed is not None else False
         uri = TASKS_URI + "{0}/subtasks".format(task_id)
         body = {"name": name, "finished": completed}
         json = self.request(uri, body)
