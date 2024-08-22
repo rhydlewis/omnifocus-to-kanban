@@ -31,6 +31,7 @@ def setup_logging() -> None:
     logging.debug(f"sys.executable: {sys.executable}")
     logging.debug(f"os.getcwd(): {os.getcwd()}")
 
+
 def connect_to_board(opts: Dict[str, Any]) -> Union[KanbanFlow, PlaneKanbanBoard]:
     """Connect to the appropriate Kanban board based on options."""
     if opts[KANBANFLOW_OPTION]:
@@ -59,6 +60,7 @@ def process_tasks(board: Union[KanbanFlow, PlaneKanbanBoard], omnifocus: Omnifoc
         cards_added = board.create_tasks(cards_to_add)
     
     return f"{cards_added} update(s), {len(tasks_closed)} task(s) closed & {len(repeating_tasks_closed)} repeating tasks closed"
+
 
 def main() -> None:
     start = timer()

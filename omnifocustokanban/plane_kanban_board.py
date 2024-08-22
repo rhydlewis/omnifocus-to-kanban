@@ -2,6 +2,7 @@ import logging
 import requests
 from typing import List, Dict, Any
 
+
 class PlaneKanbanBoard:
     def __init__(self, api_key: str, workspace_id: str, project_id: str):
         self.api_key = api_key
