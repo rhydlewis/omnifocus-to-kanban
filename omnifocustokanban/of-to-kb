@@ -91,6 +91,9 @@ def main() -> None:
         sys.exit(2)
     except Exception as e:
         logging.error(f"Unexpected error: {e}")
+        logging.error(f"Exception type: {type(e).__name__}")
+        logging.error(f"Exception details: {str(e)}")
+        logging.error("Traceback:", exc_info=True)
         sys.exit(3)
 
 
