@@ -2,33 +2,29 @@ import requests
 import logging
 import base64
 from operator import itemgetter
-from typing import List
+from typing import List, Dict, Any, Optional
 from omnifocus import Task
 
 COMMENT_PREFIX = "external_id="
 TASKS_URI = "https://kanbanflow.com/api/v1/tasks/"
+BOARD_URI = "https://kanbanflow.com/api/v1/board"
 
 
 class KanbanFlowBoard:
-    log = logging.getLogger(__name__)
-    auth = None
-    default_drop_column = None
-    board_details = None
-    all_tasks = {}
-    completed_tasks = []
-    api_requests = 0
-    bytes_transferred = 0
-
-    def __init__(self, token, default_drop_column, types, completed_columns):
-        auth = base64.b64encode("apiToken:{0}".format(token).encode()).decode("utf-8")
-        self.auth = {'Authorization': "Basic {0}".format(auth)}
-        self.board_details = self.request("https://kanbanflow.com/api/v1/board")
-        self.default_swimlane = self.board_details['swimlanes'][0]['uniqueId']
+    def __init__(self, token: str, default_drop_column: str, types: Dict[str, Any], completed_columns: List[str]):
+        self.log = logging.getLogger(__name__)
+        self.auth = {'Authorization': f"Basic {base64.b64encode(f'apiToken:{token}'.encode()).decode('utf-8')}"}
         self.default_drop_column = default_drop_column
         self.types = types
+        self.board_details = self.request(BOARD_URI)
+        self.default_swimlane = self.board_details['swimlanes'][0]['uniqueId']
+        self.all_tasks: Dict[str, Any] = {}
+        self.completed_tasks: List[Dict[str, str]] = []
+        self.api_requests = 0
+        self.bytes_transferred = 0
         self.classify_board(completed_columns)
 
-    def classify_board(self, completed_columns):
+    def classify_board(self, completed_columns: List[str]) -> None:
         columns = self.request(TASKS_URI)
 
         for column in columns:
@@ -37,12 +33,11 @@ class KanbanFlowBoard:
             tasks = column["tasks"]
             is_completed_column = column_id in completed_columns
 
-            # self.log.debug(u"Found {0} tasks in {1} (completed column? {2})".format(len(tasks), column_name,
-            #                                                                         is_completed_column))
+            self.log.debug(f"Found {len(tasks)} tasks in {column_name} (completed column? {is_completed_column})")
 
             for task in tasks:
                 _id = task["_id"]
-                # self.log.debug("{0}".format("Parsing task {0}".format(task["name"])))
+                self.log.debug(f"Parsing task {task['name']}")
                 comment = self.get_comment_containing_id(_id)
 
                 if comment is not None:
@@ -51,16 +46,14 @@ class KanbanFlowBoard:
                     if is_completed_column:
                         self.completed_tasks.append({"id": external_id, "name": task["name"]})
 
-    def get_comment_containing_id(self, _id):
-        # self.log.debug("Looking for comments in task {0}".format(_id))
+    def get_comment_containing_id(self, _id: str) -> Optional[Dict[str, Any]]:
+        self.log.debug(f"Looking for comments in task {_id}")
         try:
-            comment_json = self.request(TASKS_URI + "{0}/comments".format(_id))
+            comment_json = self.request(f"{TASKS_URI}{_id}/comments")
             if comment_json:
-                comment = next((item for item in comment_json if COMMENT_PREFIX in item["text"]))
-                if comment:
-                    return comment
-        except:
-            self.log.warning("Failed to get comments for {0}".format(_id))
+                return next((item for item in comment_json if COMMENT_PREFIX in item["text"]), None)
+        except Exception as e:
+            self.log.warning(f"Failed to get comments for {_id}: {str(e)}")
         return None
 
     def create_tasks(self, tasks: List[Task]):
