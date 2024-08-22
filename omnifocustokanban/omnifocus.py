@@ -143,24 +143,24 @@ class Omnifocus:
                 self.log.debug(f"Found {len(results)} results")
 
             for row in results:
-                task = self.task_from_row(row)
-                child_count = task['child_count']
-                name = task['name']
-                held = task['is_wf_task']
-                _id = task['identifier']
-                start_date = task['start_date']  # timestamp in OmniFocus 3.6
+                task_dict = self.task_from_row(row)
+                child_count = task_dict['child_count']
+                name = task_dict['name']
+                held = task_dict['is_wf_task']
+                _id = task_dict['identifier']
+                start_date = task_dict['start_date']  # timestamp in OmniFocus 3.6
 
                 if self.is_deferred(start_date):
                     self.log.debug(f"Ignoring deferred task '{name}'")
                     continue
-                if (child_count and not task['has_next_task']) and (child_count and not held):
+                if (child_count and not task_dict['has_next_task']) and (child_count and not held):
                     self.log.debug(f"Ignoring task '{name}' with {child_count} sub-tasks but doesn't have next task")
                     continue
-                if task['blocked'] and not child_count and not held:
+                if task_dict['blocked'] and not child_count and not held:
                     self.log.debug(f"Ignoring blocked task '{name}' ({child_count} sub-tasks) that isn't a WF task")
                     continue
 
-                tasks[_id] = self.init_task(task)
+                tasks[_id] = self.init_task(task_dict)
 
             self.log.debug(f"Found {len(tasks)} flagged tasks")
             return tasks
@@ -258,20 +258,20 @@ class Omnifocus:
             self.log.error(f"Database error: {e}")
             raise
 
-    def init_task(self, task: Dict[str, Any]) -> Task:
+    def init_task(self, task_dict: Dict[str, Any]) -> Task:
         completed = None
 
-        if task['completed_date']:
+        if task_dict['completed_date']:
             completed = True
 
-        _id = task['identifier']
-        child_count = task['child_count']
+        _id = task_dict['identifier']
+        child_count = task_dict['child_count']
 
         task_obj = Task(
             identifier=_id,
-            name=task['name'],
-            type=task['tag'],
-            note=task['note'],
+            name=task_dict['name'],
+            type=task_dict['tag'],
+            note=task_dict['note'],
             completed=completed,
             uri=f"{URI_PREFIX}{_id}"
         )
