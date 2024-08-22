@@ -10,10 +10,12 @@ from typing import Dict, List, Optional, Tuple, Any
 from dataclasses import dataclass
 from enum import Enum
 
+
 class TaskStatus(Enum):
     DONE = 'done'
     DROPPED = 'dropped'
     INACTIVE = 'inactive'
+
 
 @dataclass
 class Task:
@@ -25,9 +27,6 @@ class Task:
     uri: str
     children: Optional[List['Task']] = None
 
-
-# DB_LOCATION = "/Library/Group Containers/34YW5XSRB7.com.omnigroup.OmniFocus/com.omnigroup.OmniFocus3/" \
-#               "com.omnigroup.OmniFocusModel/OmniFocusDatabase.db"
 
 DB_LOCATION = "/Library/Group Containers/34YW5XSRB7.com.omnigroup.OmniFocus/com.omnigroup.OmniFocus4/" \
               "com.omnigroup.OmniFocusModel/OmniFocusDatabase.db"
@@ -322,12 +321,4 @@ class Omnifocus:
 if __name__ == '__main__':
     omnifocus = Omnifocus()
     print(omnifocus.get_task_details("k83Obd03UWV"))
-@dataclass
-class Task:
-    identifier: str
-    name: str
-    type: str
-    note: str
-    completed: Optional[bool]
-    uri: str
-    children: Optional[List['Task']] = None
+
