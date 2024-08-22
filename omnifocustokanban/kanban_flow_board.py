@@ -85,7 +85,7 @@ class KanbanFlowBoard:
 
         return tasks_added
 
-    def create_task(self, name, column, identifier, swimlane, description='', _type=None, subtasks=None):
+    def create_task(self, name: str, column: str, identifier: str, swimlane: str, description: str = '', _type: str = None, subtasks: List[Task] = None):
         if 'None' == _type:
             raise ValueError("Task '{0}' can't have context value of 'None'".format(name))
 
