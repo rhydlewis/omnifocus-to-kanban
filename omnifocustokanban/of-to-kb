@@ -82,6 +82,7 @@ def main() -> None:
             result = f"To close: {external_ids}\nTo add: {cards_to_add}"
 
         print(result)
+        # os._exit(0)
 
     except ValueError as e:
         logging.error(f"Invalid option: {e}")
@@ -100,4 +101,3 @@ def main() -> None:
 if __name__ == '__main__':
     setup_logging()
     main()
-

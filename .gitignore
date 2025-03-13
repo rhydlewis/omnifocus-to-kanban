@@ -9,3 +9,4 @@ log/
 venv/
 .python-version
 pyvenv.cfg
+.aider*
