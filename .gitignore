@@ -10,3 +10,4 @@ venv/
 .python-version
 pyvenv.cfg
 .aider*
+.DS_Store
